@@ -52,6 +52,7 @@ const freetypeSources = [_][]const u8{
 };
 
 pub fn addFreetypeAndHarfbuzz(b: *std.Build, c_lib: *std.build.Step.Compile, target: anytype, optimize: std.builtin.OptimizeMode, flags: []const []const u8) void {
+    b.addSearchPrefix("/opt/homebrew/Cellar/"); // iff macos
 	const freetype = b.dependency("freetype", .{
 		.target = target,
 		.optimize = optimize,
@@ -121,6 +122,11 @@ pub fn build(b: *std.build.Builder) !void {
 				c_lib.linkSystemLibrary("x11");
 			//}
 			c_lib.linkSystemLibrary("GL");
+        } else if(target.getOsTag() == .macos) {
+            c_lib.addCSourceFiles(.{.files = &[_][]const u8 {
+                "lib/glfw/src/context.c", "lib/glfw/src/init.c", "lib/glfw/src/input.c", "lib/glfw/src/monitor.c", "lib/glfw/src/vulkan.c", "lib/glfw/src/window.c", "lib/glfw/src/cocoa_init.m", "lib/glfw/src/cocoa_joystick.m", "lib/glfw/src/cocoa_monitor.m", "lib/glfw/src/cocoa_window.m", "lib/glfw/src/cocoa_time.c", "lib/glfw/src/posix_thread.c", "lib/glfw/src/nsgl_context.m", "lib/glfw/src/egl_context.c", "lib/glfw/src/osmesa_context.c"
+            }, .flags = c_flags ++ &[_][]const u8{"-std=c99", "-D_GLFW_COCOA"}});
+			c_lib.linkSystemLibrary("GL");
 		} else {
 			std.log.err("Unsupported target: {}\n", .{ target.getOsTag() });
 		}
@@ -161,7 +167,12 @@ pub fn build(b: *std.build.Builder) !void {
 			// ALSA:
 			addPackageCSourceFiles(c_lib, portaudio, &[_][]const u8 {"src/hostapi/alsa/pa_linux_alsa.c"}, c_flags);
 			c_lib.linkSystemLibrary("asound");
-		} else {
+        } else if(target.getOsTag() == .macos) {
+			addPackageCSourceFiles(c_lib, portaudio, &[_][]const u8 {"src/os/unix/pa_unix_hostapis.c", "src/os/unix/pa_unix_util.c"}, c_flags ++ &[_][]const u8{"-DPA_USE_COREAUDIO"});
+			// coreaudio:
+			addPackageCSourceFiles(c_lib, portaudio, &[_][]const u8 {"src/hostapi/coreaudio/pa_mac_core_utilities.c", "src/hostapi/coreaudio/pa_mac_core.c", "src/hostapi/coreaudio/pa_mac_core_blocking.c", }, c_flags ++ &[_][]const u8{"-DPA_USE_COREAUDIO"});
+			std.log.err("Beware in progress target: {}\n", .{ target.getOsTag() });
+        } else {
 			std.log.err("Unsupported target: {}\n", .{ target.getOsTag() });
 		}
 	}
