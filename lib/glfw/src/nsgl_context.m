@@ -98,14 +98,18 @@ static int extensionSupportedNSGL(const char* extension)
 
 static GLFWglproc getProcAddressNSGL(const char* procname)
 {
-    CFStringRef symbolName = CFStringCreateWithCString(kCFAllocatorDefault,
+    /* CFStringRef symbolName = CFStringCreateWithCString(kCFAllocatorDefault,
                                                        procname,
-                                                       kCFStringEncodingASCII);
+                                                       kCFStringEncodingASCII); */
 
-    GLFWglproc symbol = CFBundleGetFunctionPointerForName(_glfw.nsgl.framework,
-                                                          symbolName);
+    /* GLFWglproc symbol = CFBundleGetFunctionPointerForName(_glfw.nsgl.framework,
+                                                          symbolName); */
 
-    CFRelease(symbolName);
+    GLFWglproc symbol = _glfw_dlsym(_glfw.osmesa.handle, procname);
+
+    _glfwInputError(GLFW_PLATFORM_ERROR, "Symbol %s acquired as %llu.\n", procname, symbol);
+
+    /* CFRelease(symbolName); */
 
     return symbol;
 }
@@ -132,12 +136,13 @@ static void destroyContextNSGL(_GLFWwindow* window)
 //
 GLFWbool _glfwInitNSGL(void)
 {
-    if (_glfw.nsgl.framework)
+    if (_glfw.osmesa.handle)
         return GLFW_TRUE;
 
-    _glfw.nsgl.framework =
-        CFBundleGetBundleWithIdentifier(CFSTR("com.apple.opengl"));
-    if (_glfw.nsgl.framework == NULL)
+    /* _glfw.nsgl.framework =
+        CFBundleGetBundleWithIdentifier(CFSTR("com.apple.opengl")); */
+    _glfw.osmesa.handle = _glfw_dlopen(_GLFW_OPENGL_LIBRARY);
+    if (_glfw.osmesa.handle == NULL)
     {
         _glfwInputError(GLFW_API_UNAVAILABLE,
                         "NSGL: Failed to locate OpenGL framework");

@@ -363,7 +363,7 @@ GLFWbool _glfwRefreshContextAttribs(_GLFWwindow* window,
         window->context.getProcAddress("glGetString");
     if (!window->context.GetIntegerv || !window->context.GetString)
     {
-        _glfwInputError(GLFW_PLATFORM_ERROR, "Entry point retrieval is broken");
+        _glfwInputError(GLFW_PLATFORM_ERROR, "Entry point retrieval is broken: %llu %llu", window->context.GetIntegerv, window->context.GetString);
         glfwMakeContextCurrent((GLFWwindow*) previous);
         return GLFW_FALSE;
     }

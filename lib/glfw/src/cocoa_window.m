@@ -912,6 +912,7 @@ int _glfwPlatformCreateWindow(_GLFWwindow* window,
     {
         if (ctxconfig->source == GLFW_NATIVE_CONTEXT_API)
         {
+            _glfwInputError(GLFW_VERSION_UNAVAILABLE, "ctxconfig source is Native Context.");
             if (!_glfwInitNSGL())
                 return GLFW_FALSE;
             if (!_glfwCreateContextNSGL(window, ctxconfig, fbconfig))
@@ -919,6 +920,7 @@ int _glfwPlatformCreateWindow(_GLFWwindow* window,
         }
         else if (ctxconfig->source == GLFW_EGL_CONTEXT_API)
         {
+            _glfwInputError(GLFW_VERSION_UNAVAILABLE, "ctxconfig source is EGL Context.");
             // EGL implementation on macOS use CALayer* EGLNativeWindowType so we
             // need to get the layer for EGL window surface creation.
             [window->ns.view setWantsLayer:YES];
@@ -931,6 +933,7 @@ int _glfwPlatformCreateWindow(_GLFWwindow* window,
         }
         else if (ctxconfig->source == GLFW_OSMESA_CONTEXT_API)
         {
+            _glfwInputError(GLFW_VERSION_UNAVAILABLE, "ctxconfig source is OSMesa Context.");
             if (!_glfwInitOSMesa())
                 return GLFW_FALSE;
             if (!_glfwCreateContextOSMesa(window, ctxconfig, fbconfig))

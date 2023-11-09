@@ -94,7 +94,7 @@ pub fn build(b: *std.build.Builder) !void {
 		.target = target,
 		.optimize = optimize,
 	});
-	const c_flags = &[_][]const u8{"-g"};
+	const c_flags = &[_][]const u8{"-g", "-D_GLFW_OPENGL_LIBRARY=\"/opt/homebrew/lib/libGL.1.dylib\""};
 	c_lib.addIncludePath(.{.path = "include"});
 	c_lib.installHeader("include/glad/glad.h", "glad/glad.h");
 	c_lib.installHeader("include/GLFW/glfw3.h", "GLFW/glfw3.h");
