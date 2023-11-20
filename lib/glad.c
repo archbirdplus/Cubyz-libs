@@ -88,7 +88,8 @@ static
 int open_gl(void) {
 #ifdef __APPLE__
     static const char *NAMES[] = {
-        "/opt/homebrew/lib/libGL.dylib",
+        "/usr/local/MoltenZink/lib/libGL.1.dylib",
+        // "/opt/homebrew/lib/libGL.dylib",
         // "../Frameworks/OpenGL.framework/OpenGL",
         // "/Library/Frameworks/OpenGL.framework/OpenGL",
         // "/System/Library/Frameworks/OpenGL.framework/OpenGL",
@@ -1791,6 +1792,7 @@ static void find_coreGL(void) {
 }
 
 int gladLoadGLLoader(GLADloadproc load) {
+    printf("glad load glloader\n");
 	GLVersion.major = 0; GLVersion.minor = 0;
 	glGetString = (PFNGLGETSTRINGPROC)load("glGetString");
 	if(glGetString == NULL) return 0;

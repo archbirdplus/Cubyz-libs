@@ -1241,7 +1241,7 @@ void _glfwPlatformTerminate(void)
     _glfwTerminateOSMesa();
     // NOTE: These need to be unloaded after XCloseDisplay, as they register
     //       cleanup callbacks that get called by that function
-    _glfwTerminateEGL();
+    _glfwTerminateEGL(); // pretend EGL is not exist
     _glfwTerminateGLX();
 
 #if defined(__linux__)
