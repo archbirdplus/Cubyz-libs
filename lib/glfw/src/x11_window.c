@@ -1975,11 +1975,10 @@ int _glfwPlatformCreateWindow(_GLFWwindow* window,
         }
         else if (ctxconfig->source == GLFW_EGL_CONTEXT_API)
         {
-            _glfwInputError(69420, "Removed EGL funcs\n");
-            // if (!_glfwInitEGL())
-                // return GLFW_FALSE;
-            // if (!_glfwChooseVisualEGL(wndconfig, ctxconfig, fbconfig, &visual, &depth))
-                // return GLFW_FALSE;
+            if (!_glfwInitEGL())
+                return GLFW_FALSE;
+            if (!_glfwChooseVisualEGL(wndconfig, ctxconfig, fbconfig, &visual, &depth))
+                return GLFW_FALSE;
         }
         else if (ctxconfig->source == GLFW_OSMESA_CONTEXT_API)
         {
@@ -2006,9 +2005,8 @@ int _glfwPlatformCreateWindow(_GLFWwindow* window,
         }
         else if (ctxconfig->source == GLFW_EGL_CONTEXT_API)
         {
-            _glfwInputError(69420, "Still removed EGL\.");
-            // if (!_glfwCreateContextEGL(window, ctxconfig, fbconfig))
-                // return GLFW_FALSE;
+            if (!_glfwCreateContextEGL(window, ctxconfig, fbconfig))
+                return GLFW_FALSE;
         }
         else if (ctxconfig->source == GLFW_OSMESA_CONTEXT_API)
         {

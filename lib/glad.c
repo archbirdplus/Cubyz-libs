@@ -1722,7 +1722,7 @@ static void load_GL_VERSION_4_5(GLADloadproc load) {
 	glad_glGetnSeparableFilter = (PFNGLGETNSEPARABLEFILTERPROC)load("glGetnSeparableFilter");
 	glad_glGetnHistogram = (PFNGLGETNHISTOGRAMPROC)load("glGetnHistogram");
 	glad_glGetnMinmax = (PFNGLGETNMINMAXPROC)load("glGetnMinmax");
-	glad_glTextureBarrier = (PFNGLTEXTUREBARRIERPROC)load("glTextureBarrier");
+	glad_glTextureBarrier = (PFNGLTEXTUREBARRIERPROC)load("glTextureBarrierNV");
 }
 static int find_extensionsGL(void) {
 	if (!get_exts()) return 0;
