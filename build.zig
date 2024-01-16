@@ -51,7 +51,7 @@ const freetypeSources = [_][]const u8{
 	"src/winfonts/winfnt.c",
 };
 
-pub fn addFreetypeAndHarfbuzz(b: *std.Build, c_lib: *std.build.Step.Compile, target: anytype, optimize: std.builtin.OptimizeMode, flags: []const []const u8) void {
+pub fn addFreetypeAndHarfbuzz(b: *std.Build, c_lib: *std.Build.Step.Compile, target: anytype, optimize: std.builtin.OptimizeMode, flags: []const []const u8) void {
 	const freetype = b.dependency("freetype", .{
 		.target = target,
 		.optimize = optimize,
@@ -66,7 +66,7 @@ pub fn addFreetypeAndHarfbuzz(b: *std.Build, c_lib: *std.build.Step.Compile, tar
 	c_lib.addIncludePath(freetype.path("include"));
 	c_lib.installHeadersDirectory(freetype.path("include").getPath(b), "");
 	addPackageCSourceFiles(c_lib, freetype, &freetypeSources, flags);
-	if (target.toTarget().os.tag == .macos) c_lib.addCSourceFile(.{
+	if (target.result.os.tag == .macos) c_lib.addCSourceFile(.{
 		.file = freetype.path("src/base/ftmac.c"),
 		.flags = &.{},
 	});
@@ -78,12 +78,13 @@ pub fn addFreetypeAndHarfbuzz(b: *std.Build, c_lib: *std.build.Step.Compile, tar
 	c_lib.linkLibCpp();
 }
 
-pub fn build(b: *std.build.Builder) !void {
+pub fn build(b: *std.Build) !void {
 	// Standard target options allows the person running `zig build` to choose
 	// what target to build for. Here we do not override the defaults, which
 	// means any target is allowed, and the default is native. Other options
 	// for restricting supported target set are available.
 	const target = b.standardTargetOptions(.{});
+	const t = target.result;
 
 	// Standard release options allow the person running `zig build` to select
 	// between Debug, ReleaseSafe, ReleaseFast, and ReleaseSmall.
@@ -102,14 +103,14 @@ pub fn build(b: *std.build.Builder) !void {
 	c_lib.installHeader("include/stb/stb_vorbis.h", "stb/stb_vorbis.h");
 	c_lib.linkLibC();
 	{ // compile glfw from source:
-		if(target.getOsTag() == .windows) {
+		if(t.os.tag == .windows) {
 			c_lib.addCSourceFiles(.{.files = &[_][]const u8 {
 				"lib/glfw/src/win32_init.c", "lib/glfw/src/win32_joystick.c", "lib/glfw/src/win32_monitor.c", "lib/glfw/src/win32_time.c", "lib/glfw/src/win32_thread.c", "lib/glfw/src/win32_window.c", "lib/glfw/src/wgl_context.c", "lib/glfw/src/egl_context.c", "lib/glfw/src/osmesa_context.c", "lib/glfw/src/context.c", "lib/glfw/src/init.c", "lib/glfw/src/input.c", "lib/glfw/src/monitor.c", "lib/glfw/src/vulkan.c", "lib/glfw/src/window.c"
 			}, .flags = c_flags ++ &[_][]const u8{"-std=c99", "-D_GLFW_WIN32"}});
 			c_lib.linkSystemLibrary("gdi32");
 			c_lib.linkSystemLibrary("opengl32");
 			c_lib.linkSystemLibrary("ws2_32");
-		} else if(target.getOsTag() == .linux) {
+		} else if(t.os.tag == .linux) {
 			// TODO: if(isWayland) {
 			//	c_lib.addCSourceFiles(&[_][]const u8 {
 			//		"lib/glfw/src/linux_joystick.c", "lib/glfw/src/wl_init.c", "lib/glfw/src/wl_monitor.c", "lib/glfw/src/wl_window.c", "lib/glfw/src/posix_time.c", "lib/glfw/src/posix_thread.c", "lib/glfw/src/xkb_unicode.c", "lib/glfw/src/egl_context.c", "lib/glfw/src/osmesa_context.c", "lib/glfw/src/context.c", "lib/glfw/src/init.c", "lib/glfw/src/input.c", "lib/glfw/src/monitor.c", "lib/glfw/src/vulkan.c", "lib/glfw/src/window.c"
@@ -122,7 +123,7 @@ pub fn build(b: *std.build.Builder) !void {
 			//}
 			c_lib.linkSystemLibrary("GL");
 		} else {
-			std.log.err("Unsupported target: {}\n", .{ target.getOsTag() });
+			std.log.err("Unsupported target: {}\n", .{ t.os.tag });
 		}
 	}
 	{ // compile portaudio from source:
@@ -145,7 +146,7 @@ pub fn build(b: *std.build.Builder) !void {
 			"src/common/pa_stream.c",
 			"src/common/pa_trace.c",
 		}, c_flags);
-		if(target.getOsTag() == .windows) {
+		if(t.os.tag == .windows) {
 			// windows:
 			addPackageCSourceFiles(c_lib, portaudio, &[_][]const u8 {"src/os/win/pa_win_coinitialize.c", "src/os/win/pa_win_hostapis.c", "src/os/win/pa_win_util.c", "src/os/win/pa_win_waveformat.c", "src/os/win/pa_win_wdmks_utils.c", "src/os/win/pa_x86_plain_converters.c", }, c_flags ++ &[_][]const u8{"-DPA_USE_WASAPI"});
 			c_lib.addIncludePath(portaudio.path("src/os/win"));
@@ -154,7 +155,7 @@ pub fn build(b: *std.build.Builder) !void {
 			c_lib.linkSystemLibrary("uuid");
 			// WASAPI:
 			addPackageCSourceFiles(c_lib, portaudio, &[_][]const u8 {"src/hostapi/wasapi/pa_win_wasapi.c"}, c_flags);
-		} else if(target.getOsTag() == .linux) {
+		} else if(t.os.tag == .linux) {
 			// unix:
 			addPackageCSourceFiles(c_lib, portaudio, &[_][]const u8 {"src/os/unix/pa_unix_hostapis.c", "src/os/unix/pa_unix_util.c"}, c_flags ++ &[_][]const u8{"-DPA_USE_ALSA"});
 			c_lib.addIncludePath(portaudio.path("src/os/unix"));
@@ -162,7 +163,7 @@ pub fn build(b: *std.build.Builder) !void {
 			addPackageCSourceFiles(c_lib, portaudio, &[_][]const u8 {"src/hostapi/alsa/pa_linux_alsa.c"}, c_flags);
 			c_lib.linkSystemLibrary("asound");
 		} else {
-			std.log.err("Unsupported target: {}\n", .{ target.getOsTag() });
+			std.log.err("Unsupported target: {}\n", .{ t.os.tag });
 		}
 	}
 	c_lib.addCSourceFiles(.{.files = &[_][]const u8{"lib/glad.c", "lib/stb_image.c", "lib/stb_image_write.c", "lib/stb_vorbis.c"}, .flags = c_flags});
