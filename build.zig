@@ -124,9 +124,16 @@ pub fn build(b: *std.build.Builder) !void {
 			c_lib.linkSystemLibrary("GL");
         } else if(target.getOsTag() == .macos) {
             c_lib.addCSourceFiles(.{.files = &[_][]const u8 {
-                "lib/glfw/src/context.c", "lib/glfw/src/init.c", "lib/glfw/src/input.c", "lib/glfw/src/monitor.c", "lib/glfw/src/platform.c", "lib/glfw/src/vulkan.c", "lib/glfw/src/window.c", "lib/glfw/src/egl_context.c", "lib/glfw/src/osmesa_context.c", "lib/glfw/src/null_init.c", "lib/glfw/src/null_monitor.c", "lib/glfw/src/null_window.c", "lib/glfw/src/null_joystick.c", "lib/glfw/src/cocoa_time.c", "lib/glfw/src/posix_module.c", "lib/glfw/src/posix_thread.c", "lib/glfw/src/cocoa_init.m", "lib/glfw/src/cocoa_joystick.m", "lib/glfw/src/cocoa_monitor.m", "lib/glfw/src/cocoa_window.m", "lib/glfw/src/nsgl_context.m"
-            }, .flags = c_flags ++ &[_][]const u8{"-std=c99", "-D_GLFW_COCOA"}});
-                // "-D_GLFW_GLX_LIBRARY=\"/usr/local/MoltenZink/lib/libGL.1.dylib\""
+                "lib/glfw/src/context.c", "lib/glfw/src/init.c", "lib/glfw/src/input.c", "lib/glfw/src/monitor.c", "lib/glfw/src/platform.c", "lib/glfw/src/vulkan.c", "lib/glfw/src/window.c", "lib/glfw/src/osmesa_context.c", "lib/glfw/src/null_init.c", "lib/glfw/src/null_monitor.c", "lib/glfw/src/null_window.c", "lib/glfw/src/null_joystick.c", "lib/glfw/src/cocoa_time.c", "lib/glfw/src/posix_module.c", "lib/glfw/src/posix_thread.c", "lib/glfw/src/cocoa_init.m", "lib/glfw/src/cocoa_joystick.m", "lib/glfw/src/cocoa_monitor.m", "lib/glfw/src/cocoa_window.m", 
+                // "lib/glfw/src/nsgl_context.m",
+                "lib/glfw/src/egl_context.c",
+                "lib/glfw/src/x11_init.c", "lib/glfw/src/x11_monitor.c", "lib/glfw/src/x11_window.c", "lib/glfw/src/xkb_unicode.c", "lib/glfw/src/glx_context.c", "lib/glfw/src/posix_poll.c"
+            }, .flags = c_flags ++ &[_][]const u8{"-std=c99",
+                // "-D_GLFW_COCOA"
+                "-D_GLFW_X11"
+            }});
+			c_lib.linkFramework("AppKit");
+			c_lib.linkFramework("QuartzCore");
 			c_lib.linkSystemLibrary("GL");
 			c_lib.linkSystemLibrary("X11");
             c_lib.addIncludePath(.{.path = "/opt/X11/include"});
