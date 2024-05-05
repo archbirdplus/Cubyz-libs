@@ -107,6 +107,7 @@ pub fn build(b: *std.Build) !void {
 	c_lib.addIncludePath(.{.path = "include"});
 	c_lib.installHeader("include/glad/glad.h", "glad/glad.h");
 	c_lib.installHeader("include/GLFW/glfw3.h", "GLFW/glfw3.h");
+	c_lib.installHeader("include/KHR/khrplatform.h", "KHR/khrplatform.h");
 	c_lib.installHeader("include/stb/stb_image_write.h", "stb/stb_image_write.h");
 	c_lib.installHeader("include/stb/stb_image.h", "stb/stb_image.h");
 	c_lib.installHeader("include/stb/stb_vorbis.h", "stb/stb_vorbis.h");
