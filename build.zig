@@ -127,9 +127,9 @@ pub fn build(b: *std.Build) !void {
 				}, .flags = c_flags ++ &[_][]const u8{"-std=c99", "-D_GLFW_X11"}});
 			//}
         } else if(t.os.tag == .macos) {
-            const mac_posix_time = b.option(bool, "mac-posix_time", "Build posix_time.c into Mac GLFW") orelse false;
-            const mac_egl = b.option(bool, "mac-egl", "Build EGL into Mac GLFW") orelse false;
-            const mac_osmesa = b.option(bool, "mac-osmesa", "Build OSMESA into Mac GLFW") orelse false;
+            const mac_posix_time = b.option(bool, "mac-posix_time", "Build posix_time.c into Mac GLFW") orelse true;
+            const mac_egl = b.option(bool, "mac-egl", "Build EGL into Mac GLFW") orelse true;
+            const mac_osmesa = b.option(bool, "mac-osmesa", "Build OSMESA into Mac GLFW") orelse true;
             const mac_x11 = b.option(bool, "mac-x11", "Build X11 into Mac GLFW") orelse true;
             const mac_cocoa = b.option(bool, "mac-cocoa", "Build Cocoa into Mac GLFW") orelse false;
             const mac_nsgl = b.option(bool, "mac-nsgl", "Build NSGL into Mac GLFW") orelse false;
