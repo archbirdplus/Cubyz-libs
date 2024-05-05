@@ -116,6 +116,34 @@ pub fn build(b: *std.Build) !void {
 					"lib/glfw/src/linux_joystick.c", "lib/glfw/src/x11_init.c", "lib/glfw/src/x11_monitor.c", "lib/glfw/src/x11_window.c", "lib/glfw/src/xkb_unicode.c", "lib/glfw/src/posix_time.c", "lib/glfw/src/posix_thread.c", "lib/glfw/src/glx_context.c", "lib/glfw/src/egl_context.c", "lib/glfw/src/osmesa_context.c", "lib/glfw/src/context.c", "lib/glfw/src/init.c", "lib/glfw/src/input.c", "lib/glfw/src/monitor.c", "lib/glfw/src/vulkan.c", "lib/glfw/src/window.c"
 				}, .flags = c_flags ++ &[_][]const u8{"-std=c99", "-D_GLFW_X11"}});
 			//}
+        } else if(t.os.tag == .macos) {
+            // Building for Zink requires EGL and COCOA, llvmpipe needs X11,
+            // but these conflict with each other.
+            // TODO: Vary arguments by which backends the user asks to build.
+			c_lib.linkFramework("AppKit");
+			c_lib.linkFramework("QuartzCore");
+            c_lib.addCSourceFiles(
+                .{.files = &[_][]const u8{
+                // GLFW
+                "lib/glfw/src/context.c", "lib/glfw/src/init.c", "lib/glfw/src/input.c", "lib/glfw/src/monitor.c", "lib/glfw/src/vulkan.c", "lib/glfw/src/window.c", "lib/glfw/src/posix_thread.c",
+                // POSIX
+                "lib/glfw/src/posix_time.c",
+                // EGL
+                // "lib/glfw/src/egl_context.c",
+                // OSMesa
+                // "lib/glfw/src/null_joystick.c", "lib/glfw/src/osmesa_context.c",
+                // X11
+                "lib/glfw/src/x11_init.c", "lib/glfw/src/x11_monitor.c", "lib/glfw/src/x11_window.c", "lib/glfw/src/xkb_unicode.c", "lib/glfw/src/glx_context.c",
+                // Cocoa
+                // "lib/glfw/src/cocoa_time.c", "lib/glfw/src/cocoa_init.m", "lib/glfw/src/cocoa_joystick.m", "lib/glfw/src/cocoa_monitor.m", "lib/glfw/src/cocoa_window.m",
+                // NSGL
+                // "lib/glfw/src/nsgl_context.m",
+            }, .flags = c_flags ++ &[_][]const u8{
+                "-std=c99",
+                // "-D_GLFW_COCOA",
+                "-D_GLFW_X11",
+            }});
+            c_lib.addIncludePath(.{.path="/opt/X11/include"});
 		} else {
 			std.log.err("Unsupported target: {}\n", .{ t.os.tag });
 		}
