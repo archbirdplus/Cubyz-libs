@@ -209,7 +209,7 @@ pub fn build(b: *std.Build) !void {
 	for (targets) |target| {
 		const t = b.resolveTargetQuery(target);
 		const name = target.zigTriple(b.allocator) catch unreachable;
-		const subStep = b.step(b.fmt("build-{s}", .{name}), b.fmt("Build only {s}", .{name}));
+		const subStep = b.step(name, b.fmt("Build only {s}", .{name}));
 		const deps = b.fmt("cubyz_deps_{s}", .{name});
 		const c_lib = makeCubyzLibs(b, deps, t, .ReleaseSmall, c_flags);
 
