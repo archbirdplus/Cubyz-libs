@@ -2,7 +2,7 @@ const std = @import("std");
 
 const targets: []const std.Target.Query = &.{
     // NB: some of these targets don't build yet in Cubyz, but are
-    // included for competion's sake
+    // included for completion's sake
     .{ .cpu_arch = .aarch64, .os_tag = .macos },
     .{ .cpu_arch = .aarch64, .os_tag = .linux },
     .{ .cpu_arch = .aarch64, .os_tag = .windows },
@@ -132,16 +132,7 @@ pub fn addFreetypeAndHarfbuzz(b: *std.Build, c_lib: *std.Build.Step.Compile, tar
 	c_lib.linkLibCpp();
 }
 
-pub inline fn addGLFW(b: *std.Build, c_lib: *std.Build.Step.Compile, target: std.Build.ResolvedTarget, flags: []const []const u8) void {
-    // Simply don't deallocate the deallocator, let the
-    // system clean it up for us. build.zig is not long-
-    // lived anyways. Used for dynamically generating strings
-    // for the MacOS target.
-    // TODO: make this idiomatic
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    const alloc = gpa.allocator();
-    // defer { if(gpa.deinit() == .leak) std.log.info("leak :)"); }
-
+pub inline fn addGLFWSources(c_lib: *std.Build.Step.Compile, target: std.Build.ResolvedTarget, flags: []const []const u8) void {
     if(target.result.os.tag == .windows) {
         c_lib.addCSourceFiles(.{.files = &[_][]const u8 {
             "lib/glfw/src/win32_init.c", "lib/glfw/src/win32_joystick.c", "lib/glfw/src/win32_monitor.c", "lib/glfw/src/win32_time.c", "lib/glfw/src/win32_thread.c", "lib/glfw/src/win32_window.c", "lib/glfw/src/wgl_context.c", "lib/glfw/src/egl_context.c", "lib/glfw/src/osmesa_context.c", "lib/glfw/src/context.c", "lib/glfw/src/init.c", "lib/glfw/src/input.c", "lib/glfw/src/monitor.c", "lib/glfw/src/vulkan.c", "lib/glfw/src/window.c"
@@ -157,37 +148,19 @@ pub inline fn addGLFW(b: *std.Build, c_lib: *std.Build.Step.Compile, target: std
             }, .flags = flags ++ &[_][]const u8{"-std=c99", "-D_GLFW_X11"}});
         //}
     } else if(target.result.os.tag == .macos) {
-        const mac_posix_time = b.option(bool, "mac-posix_time", "Build posix_time.c into Mac GLFW") orelse true;
-        const mac_egl = b.option(bool, "mac-egl", "Build EGL into Mac GLFW") orelse true;
-        const mac_osmesa = b.option(bool, "mac-osmesa", "Build OSMESA into Mac GLFW") orelse true;
-        const mac_x11 = b.option(bool, "mac-x11", "Build X11 into Mac GLFW") orelse true;
-        const mac_cocoa = b.option(bool, "mac-cocoa", "Build Cocoa into Mac GLFW") orelse false;
-        const mac_nsgl = b.option(bool, "mac-nsgl", "Build NSGL into Mac GLFW") orelse false;
-        // TODO: Do this properly.
-        const mac_window_system = b.option([]const u8, "mac-window-system", "Window system flag to pass to Mac GLFW: -D_GLFW_X11, -D_GLFW_COCOA, or -D_GLFW_OSMESA") orelse "-D_GLFW_X11";
         // Building for Zink requires EGL and COCOA, while LLVMpipe needs X11.
-        // These conflict with each other but I'll let the user figure it
-        // out.
-        var files = std.ArrayList([]const u8).init(alloc);
-        // GLFW
-        files.appendSlice(&[_][]const u8 { "lib/glfw/src/context.c", "lib/glfw/src/init.c", "lib/glfw/src/input.c", "lib/glfw/src/monitor.c", "lib/glfw/src/vulkan.c", "lib/glfw/src/window.c", "lib/glfw/src/posix_thread.c" }) catch unreachable;
-        // POSIX
-        if(mac_posix_time) files.appendSlice(&[_][]const u8 { "lib/glfw/src/posix_time.c" }) catch unreachable;
-        // EGL
-        if(mac_egl) files.appendSlice(&[_][]const u8 { "lib/glfw/src/egl_context.c" }) catch unreachable;
-        // OSMesa
-        if(mac_osmesa) files.appendSlice(&[_][]const u8 { "lib/glfw/src/null_joystick.c", "lib/glfw/src/osmesa_context.c" }) catch unreachable;
-        // X11
-        if(mac_x11) files.appendSlice(&[_][]const u8 { "lib/glfw/src/x11_init.c", "lib/glfw/src/x11_monitor.c", "lib/glfw/src/x11_window.c", "lib/glfw/src/xkb_unicode.c", "lib/glfw/src/glx_context.c" }) catch unreachable;
-        // Cocoa
-        if(mac_cocoa) files.appendSlice(&[_][]const u8 { "lib/glfw/src/cocoa_time.c", "lib/glfw/src/cocoa_init.m", "lib/glfw/src/cocoa_joystick.m", "lib/glfw/src/cocoa_monitor.m", "lib/glfw/src/cocoa_window.m" }) catch unreachable;
-        // NSGL
-        if(mac_nsgl) files.appendSlice(&[_][]const u8 { "lib/glfw/src/nsgl_context.m" }) catch unreachable;
+		// I could offer both as target options, but Zink is nowhere near ready.
         c_lib.addCSourceFiles(
-            .{.files = files.items,
+            .{.files = &[_][]const u8 {
+				"lib/glfw/src/context.c", "lib/glfw/src/init.c", "lib/glfw/src/input.c", "lib/glfw/src/monitor.c", "lib/glfw/src/vulkan.c", "lib/glfw/src/window.c", "lib/glfw/src/posix_thread.c",
+				"lib/glfw/src/posix_time.c",
+				"lib/glfw/src/egl_context.c",
+				"lib/glfw/src/null_joystick.c", "lib/glfw/src/osmesa_context.c",
+				"lib/glfw/src/x11_init.c", "lib/glfw/src/x11_monitor.c", "lib/glfw/src/x11_window.c", "lib/glfw/src/xkb_unicode.c", "lib/glfw/src/glx_context.c"
+			},
             .flags = flags ++ &[_][]const u8{
             "-std=c99",
-            mac_window_system
+			"-D_GLFW_X11"
         }});
         c_lib.addIncludePath(.{.path="/opt/X11/include"});
     } else {
@@ -211,7 +184,7 @@ pub inline fn makeCubyzLibs(b: *std.Build, name: []const u8, target: std.Build.R
 	c_lib.installHeader("include/stb/stb_vorbis.h", "stb/stb_vorbis.h");
 	addPortAudio(b, c_lib, target, optimize, flags);
 	addFreetypeAndHarfbuzz(b, c_lib, target, optimize, flags);
-	addGLFW(b, c_lib, target, flags);
+	addGLFWSources(c_lib, target, flags);
 	c_lib.addCSourceFiles(.{.files = &[_][]const u8{"lib/glad.c", "lib/stb_image.c", "lib/stb_image_write.c", "lib/stb_vorbis.c"}, .flags = flags});
 
 	return c_lib;
