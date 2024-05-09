@@ -208,29 +208,22 @@ pub fn build(b: *std.Build) !void {
 
 	for (targets) |target| {
 		const t = b.resolveTargetQuery(target);
-		const name = target.zigTriple(b.allocator) catch unreachable;
+		const name = t.result.linuxTriple(b.allocator) catch unreachable;
 		const subStep = b.step(name, b.fmt("Build only {s}", .{name}));
 		const deps = b.fmt("cubyz_deps_{s}", .{name});
 		const c_lib = makeCubyzLibs(b, deps, t, .ReleaseSmall, c_flags);
-
-		const install = b.addInstallArtifact(c_lib, .{
-			.dest_dir = .{
-				.override = .{.custom = "cubyz-libs-release"}
-			}
-		});
+		const install = b.addInstallArtifact(c_lib, .{});
 
 		subStep.dependOn(&install.step);
 		releaseStep.dependOn(subStep);
 	}
 
 	{
-		const c_lib = makeCubyzLibs(b, "cubyz_deps_native", preferredTarget, preferredOptimize, c_flags);
-
-		const install = b.addInstallArtifact(c_lib, .{
-			.dest_dir = .{
-				.override = .{.custom = "cubyz-libs-native"}
-			}
-		});
+		const name = preferredTarget.result.linuxTriple(b.allocator) catch unreachable;
+		std.log.info("{s}\n", .{name});
+		std.log.info("{}\n", .{preferredTarget});
+		const c_lib = makeCubyzLibs(b, b.fmt("cubyz_deps_{s}", .{name}), preferredTarget, preferredOptimize, c_flags);
+		const install = b.addInstallArtifact(c_lib, .{});
 
 		nativeStep.dependOn(&install.step);
 	}
