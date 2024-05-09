@@ -1,5 +1,16 @@
 const std = @import("std");
 
+const targets: []const std.Target.Query = &.{
+    // NB: some of these targets don't build yet in Cubyz, but are
+    // included for competion's sake
+    .{ .cpu_arch = .aarch64, .os_tag = .macos },
+    .{ .cpu_arch = .aarch64, .os_tag = .linux },
+    .{ .cpu_arch = .aarch64, .os_tag = .windows },
+    .{ .cpu_arch = .x86_64, .os_tag = .macos },
+    .{ .cpu_arch = .x86_64, .os_tag = .linux },
+    .{ .cpu_arch = .x86_64, .os_tag = .windows },
+};
+
 fn addPackageCSourceFiles(exe: *std.Build.Step.Compile, dep: *std.Build.Dependency, files: []const []const u8, flags: []const []const u8) void {
 	for(files) |file| {
 		exe.addCSourceFile(.{ .file =  dep.path(file), .flags = flags});
@@ -51,47 +62,48 @@ const freetypeSources = [_][]const u8{
 	"src/winfonts/winfnt.c",
 };
 
-pub fn addPortaudio(b: *std.Build, c_lib: *std.Build.Step.Compile, target: anytype, optimize: std.builtin.OptimizeMode, flags: []const []const u8) void {
-	{ // compile portaudio from source:
-		const portaudio = b.dependency("portaudio", .{
-			.target = target,
-			.optimize = optimize,
-		});
-		c_lib.addIncludePath(portaudio.path("include"));
-		c_lib.installHeadersDirectory(portaudio.path("include").getPath(b), "");
-		c_lib.addIncludePath(portaudio.path("src/common"));
-		addPackageCSourceFiles(c_lib, portaudio, &[_][]const u8 {
-			"src/common/pa_allocation.c",
-			"src/common/pa_converters.c",
-			"src/common/pa_cpuload.c",
-			"src/common/pa_debugprint.c",
-			"src/common/pa_dither.c",
-			"src/common/pa_front.c",
-			"src/common/pa_process.c",
-			"src/common/pa_ringbuffer.c",
-			"src/common/pa_stream.c",
-			"src/common/pa_trace.c",
-		}, c_flags);
-		if(t.os.tag == .windows) {
-			// windows:
-			addPackageCSourceFiles(c_lib, portaudio, &[_][]const u8 {"src/os/win/pa_win_coinitialize.c", "src/os/win/pa_win_hostapis.c", "src/os/win/pa_win_util.c", "src/os/win/pa_win_waveformat.c", "src/os/win/pa_win_wdmks_utils.c", "src/os/win/pa_x86_plain_converters.c", }, c_flags ++ &[_][]const u8{"-DPA_USE_WASAPI"});
-			c_lib.addIncludePath(portaudio.path("src/os/win"));
-			// WASAPI:
-			addPackageCSourceFiles(c_lib, portaudio, &[_][]const u8 {"src/hostapi/wasapi/pa_win_wasapi.c"}, c_flags);
-		} else if(t.os.tag == .linux) {
-			// unix:
-			addPackageCSourceFiles(c_lib, portaudio, &[_][]const u8 {"src/os/unix/pa_unix_hostapis.c", "src/os/unix/pa_unix_util.c"}, c_flags ++ &[_][]const u8{"-DPA_USE_ALSA"});
-			c_lib.addIncludePath(portaudio.path("src/os/unix"));
-			// ALSA:
-			addPackageCSourceFiles(c_lib, portaudio, &[_][]const u8 {"src/hostapi/alsa/pa_linux_alsa.c"}, c_flags);
-        } else if(t.os.tag == .macos) {
-			addPackageCSourceFiles(c_lib, portaudio, &[_][]const u8 {"src/os/unix/pa_unix_hostapis.c", "src/os/unix/pa_unix_util.c"}, c_flags ++ &[_][]const u8{"-DPA_USE_COREAUDIO"});
-			// coreaudio:
-			addPackageCSourceFiles(c_lib, portaudio, &[_][]const u8 {"src/hostapi/coreaudio/pa_mac_core_utilities.c", "src/hostapi/coreaudio/pa_mac_core.c", "src/hostapi/coreaudio/pa_mac_core_blocking.c", }, c_flags ++ &[_][]const u8{"-DPA_USE_COREAUDIO"});
-		} else {
-			std.log.err("Unsupported target: {}\n", .{ t.os.tag });
-		}
-	}
+// Inlines are necessaryb to preserve comptime status of flags.
+pub inline fn addPortAudio(b: *std.Build, c_lib: *std.Build.Step.Compile, target: anytype, optimize: std.builtin.OptimizeMode, flags: []const []const u8) void {
+	// compile portaudio from source:
+    const portaudio = b.dependency("portaudio", .{
+        .target = target,
+        .optimize = optimize,
+    });
+    c_lib.addIncludePath(portaudio.path("include"));
+    c_lib.installHeadersDirectory(portaudio.path("include").getPath(b), "");
+    c_lib.addIncludePath(portaudio.path("src/common"));
+    addPackageCSourceFiles(c_lib, portaudio, &[_][]const u8 {
+        "src/common/pa_allocation.c",
+        "src/common/pa_converters.c",
+        "src/common/pa_cpuload.c",
+        "src/common/pa_debugprint.c",
+        "src/common/pa_dither.c",
+        "src/common/pa_front.c",
+        "src/common/pa_process.c",
+        "src/common/pa_ringbuffer.c",
+        "src/common/pa_stream.c",
+        "src/common/pa_trace.c",
+    }, flags);
+    if(target.result.os.tag == .windows) {
+        // windows:
+        addPackageCSourceFiles(c_lib, portaudio, &[_][]const u8 {"src/os/win/pa_win_coinitialize.c", "src/os/win/pa_win_hostapis.c", "src/os/win/pa_win_util.c", "src/os/win/pa_win_waveformat.c", "src/os/win/pa_win_wdmks_utils.c", "src/os/win/pa_x86_plain_converters.c", }, flags ++ &[_][]const u8{"-DPA_USE_WASAPI"});
+        c_lib.addIncludePath(portaudio.path("src/os/win"));
+        // WASAPI:
+        addPackageCSourceFiles(c_lib, portaudio, &[_][]const u8 {"src/hostapi/wasapi/pa_win_wasapi.c"}, flags);
+    } else if(target.result.os.tag == .linux) {
+        // unix:
+        addPackageCSourceFiles(c_lib, portaudio, &[_][]const u8 {"src/os/unix/pa_unix_hostapis.c", "src/os/unix/pa_unix_util.c"}, flags ++ &[_][]const u8{"-DPA_USE_ALSA"});
+        c_lib.addIncludePath(portaudio.path("src/os/unix"));
+        // ALSA:
+        addPackageCSourceFiles(c_lib, portaudio, &[_][]const u8 {"src/hostapi/alsa/pa_linux_alsa.c"}, flags);
+    } else if(target.result.os.tag == .macos) {
+        addPackageCSourceFiles(c_lib, portaudio, &[_][]const u8 {"src/os/unix/pa_unix_hostapis.c", "src/os/unix/pa_unix_util.c"}, flags ++ &[_][]const u8{"-DPA_USE_COREAUDIO"});
+        // coreaudio:
+        addPackageCSourceFiles(c_lib, portaudio, &[_][]const u8 {"src/hostapi/coreaudio/pa_mac_core_utilities.c", "src/hostapi/coreaudio/pa_mac_core.c", "src/hostapi/coreaudio/pa_mac_core_blocking.c", }, flags ++ &[_][]const u8{"-DPA_USE_COREAUDIO"});
+    } else {
+        std.log.err("Unsupported target: {}\n", .{ target.result.os.tag });
+    }
+}
 
 pub fn addFreetypeAndHarfbuzz(b: *std.Build, c_lib: *std.Build.Step.Compile, target: anytype, optimize: std.builtin.OptimizeMode, flags: []const []const u8) void {
 	const freetype = b.dependency("freetype", .{
@@ -120,12 +132,21 @@ pub fn addFreetypeAndHarfbuzz(b: *std.Build, c_lib: *std.Build.Step.Compile, tar
 	c_lib.linkLibCpp();
 }
 
-pub fn addGLFW(b: *std.Build, c_lib: *std.Build.Step.Compile, target: anytype, optimize, std.builtin.OptimizeMode, flags: []const []const u8) void {
-    if(t.os.tag == .windows) {
+pub inline fn addGLFW(b: *std.Build, c_lib: *std.Build.Step.Compile, target: anytype, flags: []const []const u8) void {
+    // Simply don't deallocate the deallocator, let the
+    // system clean it up for us. build.zig is not long-
+    // lived anyways. Used for dynamically generating strings
+    // for the MacOS target.
+    // TODO: make this idiomatic
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    const alloc = gpa.allocator();
+    // defer { if(gpa.deinit() == .leak) std.log.info("leak :)"); }
+
+    if(target.result.os.tag == .windows) {
         c_lib.addCSourceFiles(.{.files = &[_][]const u8 {
             "lib/glfw/src/win32_init.c", "lib/glfw/src/win32_joystick.c", "lib/glfw/src/win32_monitor.c", "lib/glfw/src/win32_time.c", "lib/glfw/src/win32_thread.c", "lib/glfw/src/win32_window.c", "lib/glfw/src/wgl_context.c", "lib/glfw/src/egl_context.c", "lib/glfw/src/osmesa_context.c", "lib/glfw/src/context.c", "lib/glfw/src/init.c", "lib/glfw/src/input.c", "lib/glfw/src/monitor.c", "lib/glfw/src/vulkan.c", "lib/glfw/src/window.c"
-        }, .flags = c_flags ++ &[_][]const u8{"-std=c99", "-D_GLFW_WIN32"}});
-    } else if(t.os.tag == .linux) {
+        }, .flags = flags ++ &[_][]const u8{"-std=c99", "-D_GLFW_WIN32"}});
+    } else if(target.result.os.tag == .linux) {
         // TODO: if(isWayland) {
         //	c_lib.addCSourceFiles(&[_][]const u8 {
         //		"lib/glfw/src/linux_joystick.c", "lib/glfw/src/wl_init.c", "lib/glfw/src/wl_monitor.c", "lib/glfw/src/wl_window.c", "lib/glfw/src/posix_time.c", "lib/glfw/src/posix_thread.c", "lib/glfw/src/xkb_unicode.c", "lib/glfw/src/egl_context.c", "lib/glfw/src/osmesa_context.c", "lib/glfw/src/context.c", "lib/glfw/src/init.c", "lib/glfw/src/input.c", "lib/glfw/src/monitor.c", "lib/glfw/src/vulkan.c", "lib/glfw/src/window.c"
@@ -133,9 +154,9 @@ pub fn addGLFW(b: *std.Build, c_lib: *std.Build.Step.Compile, target: anytype, o
         //} else {
             c_lib.addCSourceFiles(.{.files = &[_][]const u8 {
                 "lib/glfw/src/linux_joystick.c", "lib/glfw/src/x11_init.c", "lib/glfw/src/x11_monitor.c", "lib/glfw/src/x11_window.c", "lib/glfw/src/xkb_unicode.c", "lib/glfw/src/posix_time.c", "lib/glfw/src/posix_thread.c", "lib/glfw/src/glx_context.c", "lib/glfw/src/egl_context.c", "lib/glfw/src/osmesa_context.c", "lib/glfw/src/context.c", "lib/glfw/src/init.c", "lib/glfw/src/input.c", "lib/glfw/src/monitor.c", "lib/glfw/src/vulkan.c", "lib/glfw/src/window.c"
-            }, .flags = c_flags ++ &[_][]const u8{"-std=c99", "-D_GLFW_X11"}});
+            }, .flags = flags ++ &[_][]const u8{"-std=c99", "-D_GLFW_X11"}});
         //}
-    } else if(t.os.tag == .macos) {
+    } else if(target.result.os.tag == .macos) {
         const mac_posix_time = b.option(bool, "mac-posix_time", "Build posix_time.c into Mac GLFW") orelse true;
         const mac_egl = b.option(bool, "mac-egl", "Build EGL into Mac GLFW") orelse true;
         const mac_osmesa = b.option(bool, "mac-osmesa", "Build OSMESA into Mac GLFW") orelse true;
@@ -149,47 +170,37 @@ pub fn addGLFW(b: *std.Build, c_lib: *std.Build.Step.Compile, target: anytype, o
         // out.
         var files = std.ArrayList([]const u8).init(alloc);
         // GLFW
-        try files.appendSlice(&[_][]const u8 { "lib/glfw/src/context.c", "lib/glfw/src/init.c", "lib/glfw/src/input.c", "lib/glfw/src/monitor.c", "lib/glfw/src/vulkan.c", "lib/glfw/src/window.c", "lib/glfw/src/posix_thread.c" });
+        files.appendSlice(&[_][]const u8 { "lib/glfw/src/context.c", "lib/glfw/src/init.c", "lib/glfw/src/input.c", "lib/glfw/src/monitor.c", "lib/glfw/src/vulkan.c", "lib/glfw/src/window.c", "lib/glfw/src/posix_thread.c" }) catch unreachable;
         // POSIX
-        if(mac_posix_time) try files.appendSlice(&[_][]const u8 { "lib/glfw/src/posix_time.c" });
+        if(mac_posix_time) files.appendSlice(&[_][]const u8 { "lib/glfw/src/posix_time.c" }) catch unreachable;
         // EGL
-        if(mac_egl) try files.appendSlice(&[_][]const u8 { "lib/glfw/src/egl_context.c" });
+        if(mac_egl) files.appendSlice(&[_][]const u8 { "lib/glfw/src/egl_context.c" }) catch unreachable;
         // OSMesa
-        if(mac_osmesa) try files.appendSlice(&[_][]const u8 { "lib/glfw/src/null_joystick.c", "lib/glfw/src/osmesa_context.c" });
+        if(mac_osmesa) files.appendSlice(&[_][]const u8 { "lib/glfw/src/null_joystick.c", "lib/glfw/src/osmesa_context.c" }) catch unreachable;
         // X11
-        if(mac_x11) try files.appendSlice(&[_][]const u8 { "lib/glfw/src/x11_init.c", "lib/glfw/src/x11_monitor.c", "lib/glfw/src/x11_window.c", "lib/glfw/src/xkb_unicode.c", "lib/glfw/src/glx_context.c" });
+        if(mac_x11) files.appendSlice(&[_][]const u8 { "lib/glfw/src/x11_init.c", "lib/glfw/src/x11_monitor.c", "lib/glfw/src/x11_window.c", "lib/glfw/src/xkb_unicode.c", "lib/glfw/src/glx_context.c" }) catch unreachable;
         // Cocoa
-        if(mac_cocoa) try files.appendSlice(&[_][]const u8 { "lib/glfw/src/cocoa_time.c", "lib/glfw/src/cocoa_init.m", "lib/glfw/src/cocoa_joystick.m", "lib/glfw/src/cocoa_monitor.m", "lib/glfw/src/cocoa_window.m" });
+        if(mac_cocoa) files.appendSlice(&[_][]const u8 { "lib/glfw/src/cocoa_time.c", "lib/glfw/src/cocoa_init.m", "lib/glfw/src/cocoa_joystick.m", "lib/glfw/src/cocoa_monitor.m", "lib/glfw/src/cocoa_window.m" }) catch unreachable;
         // NSGL
-        if(mac_nsgl) try files.appendSlice(&[_][]const u8 { "lib/glfw/src/nsgl_context.m" });
+        if(mac_nsgl) files.appendSlice(&[_][]const u8 { "lib/glfw/src/nsgl_context.m" }) catch unreachable;
         c_lib.addCSourceFiles(
             .{.files = files.items,
-            .flags = c_flags ++ &[_][]const u8{
+            .flags = flags ++ &[_][]const u8{
             "-std=c99",
             mac_window_system
         }});
         c_lib.addIncludePath(.{.path="/opt/X11/include"});
     } else {
-        std.log.err("Unsupported target for GLFW: {}\n", .{ t.os.tag });
+        std.log.err("Unsupported target for GLFW: {}\n", .{ target.result.os.tag });
     }
 }
 
 pub fn build(b: *std.Build) !void {
-    // Simply don't deallocate the deallocator, let the
-    // system clean it up for us. build.zig is not long-
-    // lived anyways. Used for dynamically generating strings
-    // for the MacOS target.
-    // TODO: make this idiomatic
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    const alloc = gpa.allocator();
-    // defer { if(gpa.deinit() == .leak) std.log.info("leak :)"); }
-
 	// Standard target options allows the person running `zig build` to choose
 	// what target to build for. Here we do not override the defaults, which
 	// means any target is allowed, and the default is native. Other options
 	// for restricting supported target set are available.
 	const target = b.standardTargetOptions(.{});
-	const t = target.result;
 
 	// Standard release options allow the person running `zig build` to select
 	// between Debug, ReleaseSafe, ReleaseFast, and ReleaseSmall.
@@ -207,8 +218,9 @@ pub fn build(b: *std.Build) !void {
 	c_lib.installHeader("include/stb/stb_image_write.h", "stb/stb_image_write.h");
 	c_lib.installHeader("include/stb/stb_image.h", "stb/stb_image.h");
 	c_lib.installHeader("include/stb/stb_vorbis.h", "stb/stb_vorbis.h");
-    addGLFW(b, c_lib, target, optimize, c_flags);
+    addPortAudio(b, c_lib, target, optimize, c_flags);
 	addFreetypeAndHarfbuzz(b, c_lib, target, optimize, c_flags);
+    addGLFW(b, c_lib, target, c_flags);
 	c_lib.addCSourceFiles(.{.files = &[_][]const u8{"lib/glad.c", "lib/stb_image.c", "lib/stb_image_write.c", "lib/stb_vorbis.c"}, .flags = c_flags});
 
 
