@@ -63,7 +63,7 @@ const freetypeSources = [_][]const u8{
 };
 
 // Inlines are necessaryb to preserve comptime status of flags.
-pub inline fn addPortAudio(b: *std.Build, c_lib: *std.Build.Step.Compile, target: anytype, optimize: std.builtin.OptimizeMode, flags: []const []const u8) void {
+pub inline fn addPortAudio(b: *std.Build, c_lib: *std.Build.Step.Compile, target:std.Build.ResolvedTarget, optimize: std.builtin.OptimizeMode, flags: []const []const u8) void {
 	// compile portaudio from source:
     const portaudio = b.dependency("portaudio", .{
         .target = target,
@@ -105,7 +105,7 @@ pub inline fn addPortAudio(b: *std.Build, c_lib: *std.Build.Step.Compile, target
     }
 }
 
-pub fn addFreetypeAndHarfbuzz(b: *std.Build, c_lib: *std.Build.Step.Compile, target: anytype, optimize: std.builtin.OptimizeMode, flags: []const []const u8) void {
+pub fn addFreetypeAndHarfbuzz(b: *std.Build, c_lib: *std.Build.Step.Compile, target: std.Build.ResolvedTarget, optimize: std.builtin.OptimizeMode, flags: []const []const u8) void {
 	const freetype = b.dependency("freetype", .{
 		.target = target,
 		.optimize = optimize,
@@ -132,7 +132,7 @@ pub fn addFreetypeAndHarfbuzz(b: *std.Build, c_lib: *std.Build.Step.Compile, tar
 	c_lib.linkLibCpp();
 }
 
-pub inline fn addGLFW(b: *std.Build, c_lib: *std.Build.Step.Compile, target: anytype, flags: []const []const u8) void {
+pub inline fn addGLFW(b: *std.Build, c_lib: *std.Build.Step.Compile, target: std.Build.ResolvedTarget, flags: []const []const u8) void {
     // Simply don't deallocate the deallocator, let the
     // system clean it up for us. build.zig is not long-
     // lived anyways. Used for dynamically generating strings
@@ -195,22 +195,13 @@ pub inline fn addGLFW(b: *std.Build, c_lib: *std.Build.Step.Compile, target: any
     }
 }
 
-pub fn build(b: *std.Build) !void {
-	// Standard target options allows the person running `zig build` to choose
-	// what target to build for. Here we do not override the defaults, which
-	// means any target is allowed, and the default is native. Other options
-	// for restricting supported target set are available.
-	const target = b.standardTargetOptions(.{});
-
-	// Standard release options allow the person running `zig build` to select
-	// between Debug, ReleaseSafe, ReleaseFast, and ReleaseSmall.
-	const optimize = b.standardOptimizeOption(.{});
+pub inline fn makeCubyzLibs(b: *std.Build, name: []const u8, target: std.Build.ResolvedTarget, optimize: std.builtin.OptimizeMode, flags: []const []const u8) *std.Build.Step.Compile {
 	const c_lib = b.addStaticLibrary(.{
-		.name = "cubyz_deps",
+		.name = name,
 		.target = target,
 		.optimize = optimize,
 	});
-	const c_flags = &[_][]const u8{"-g"};
+
 	c_lib.addIncludePath(.{.path = "include"});
 	c_lib.installHeader("include/glad/glad.h", "glad/glad.h");
 	c_lib.installHeader("include/GLFW/glfw3.h", "GLFW/glfw3.h");
@@ -218,11 +209,54 @@ pub fn build(b: *std.Build) !void {
 	c_lib.installHeader("include/stb/stb_image_write.h", "stb/stb_image_write.h");
 	c_lib.installHeader("include/stb/stb_image.h", "stb/stb_image.h");
 	c_lib.installHeader("include/stb/stb_vorbis.h", "stb/stb_vorbis.h");
-    addPortAudio(b, c_lib, target, optimize, c_flags);
-	addFreetypeAndHarfbuzz(b, c_lib, target, optimize, c_flags);
-    addGLFW(b, c_lib, target, c_flags);
-	c_lib.addCSourceFiles(.{.files = &[_][]const u8{"lib/glad.c", "lib/stb_image.c", "lib/stb_image_write.c", "lib/stb_vorbis.c"}, .flags = c_flags});
+	addPortAudio(b, c_lib, target, optimize, flags);
+	addFreetypeAndHarfbuzz(b, c_lib, target, optimize, flags);
+	addGLFW(b, c_lib, target, flags);
+	c_lib.addCSourceFiles(.{.files = &[_][]const u8{"lib/glad.c", "lib/stb_image.c", "lib/stb_image_write.c", "lib/stb_vorbis.c"}, .flags = flags});
+
+	return c_lib;
+}
 
 
-	b.installArtifact(c_lib);
+pub fn build(b: *std.Build) !void {
+	// Standard target options allows the person running `zig build` to choose
+	// what target to build for. Here we do not override the defaults, which
+	// means any target is allowed, and the default is native. Other options
+	// for restricting supported target set are available.
+	const preferredTarget = b.standardTargetOptions(.{});
+
+	// Standard release options allow the person running `zig build` to select
+	// between Debug, ReleaseSafe, ReleaseFast, and ReleaseSmall.
+	const preferredOptimize = b.standardOptimizeOption(.{});
+	const c_flags = &[_][]const u8{"-g"};
+
+	const releaseStep = b.step("release", "Build and package all targets for distribution");
+	const debugStep = b.step("debug", "Build only native target for local builds");
+
+	for (targets) |target| {
+		const t = b.resolveTargetQuery(target);
+		const name = t.result.zigTriple(b.allocator) catch unreachable;
+		const deps = b.fmt("cubyz_deps_{s}", .{name});
+		const c_lib = makeCubyzLibs(b, deps, t, .ReleaseSmall, c_flags);
+
+		const install = b.addInstallArtifact(c_lib, .{
+			.dest_dir = .{
+				.override = .{.custom = "cubyz-libs-release"}
+			}
+		});
+
+		releaseStep.dependOn(&install.step);
+	}
+
+	{
+		const c_lib = makeCubyzLibs(b, "cubyz_deps_local", preferredTarget, preferredOptimize, c_flags);
+
+		const install = b.addInstallArtifact(c_lib, .{
+			.dest_dir = .{
+				.override = .{.custom = "cubyz-libs-local"}
+			}
+		});
+
+		debugStep.dependOn(&install.step);
+	}
 }
