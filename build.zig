@@ -204,7 +204,7 @@ pub fn build(b: *std.Build) !void {
 	const c_flags = &[_][]const u8{"-g"};
 
 	const releaseStep = b.step("release", "Build and package all targets for distribution");
-	const debugStep = b.step("debug", "Build only native target for local builds");
+	const nativeStep = b.step("native", "Build only native target for debugging or local builds");
 
 	for (targets) |target| {
 		const t = b.resolveTargetQuery(target);
@@ -224,14 +224,18 @@ pub fn build(b: *std.Build) !void {
 	}
 
 	{
-		const c_lib = makeCubyzLibs(b, "cubyz_deps_local", preferredTarget, preferredOptimize, c_flags);
+		const c_lib = makeCubyzLibs(b, "cubyz_deps_native", preferredTarget, preferredOptimize, c_flags);
 
 		const install = b.addInstallArtifact(c_lib, .{
 			.dest_dir = .{
-				.override = .{.custom = "cubyz-libs-local"}
+				.override = .{.custom = "cubyz-libs-native"}
 			}
 		});
 
-		debugStep.dependOn(&install.step);
+		nativeStep.dependOn(&install.step);
 	}
+
+	// Alias the default `zig build` to only build native target.
+	// Run `zig build release` to build all targets.
+	b.getInstallStep().dependOn(nativeStep);
 }
