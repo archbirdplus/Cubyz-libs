@@ -162,7 +162,6 @@ pub inline fn addGLFWSources(c_lib: *std.Build.Step.Compile, target: std.Build.R
             "-std=c99",
 			"-D_GLFW_X11"
         }});
-        c_lib.addIncludePath(.{.path="/opt/X11/include"});
     } else {
         std.log.err("Unsupported target for GLFW: {}\n", .{ target.result.os.tag });
     }
