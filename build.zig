@@ -1,14 +1,14 @@
 const std = @import("std");
 
 const targets: []const std.Target.Query = &.{
-    // NB: some of these targets don't build yet in Cubyz, but are
-    // included for completion's sake
-    .{ .cpu_arch = .aarch64, .os_tag = .macos },
-    .{ .cpu_arch = .aarch64, .os_tag = .linux },
-    .{ .cpu_arch = .aarch64, .os_tag = .windows },
-    .{ .cpu_arch = .x86_64, .os_tag = .macos },
-    .{ .cpu_arch = .x86_64, .os_tag = .linux },
-    .{ .cpu_arch = .x86_64, .os_tag = .windows },
+	// NB: some of these targets don't build yet in Cubyz, but are
+	// included for completion's sake
+	.{ .cpu_arch = .aarch64, .os_tag = .macos },
+	.{ .cpu_arch = .aarch64, .os_tag = .linux },
+	.{ .cpu_arch = .aarch64, .os_tag = .windows },
+	.{ .cpu_arch = .x86_64, .os_tag = .macos },
+	.{ .cpu_arch = .x86_64, .os_tag = .linux },
+	.{ .cpu_arch = .x86_64, .os_tag = .windows },
 };
 
 fn addPackageCSourceFiles(exe: *std.Build.Step.Compile, dep: *std.Build.Dependency, files: []const []const u8, flags: []const []const u8) void {
@@ -65,44 +65,44 @@ const freetypeSources = [_][]const u8{
 // Inlines are necessaryb to preserve comptime status of flags.
 pub inline fn addPortAudio(b: *std.Build, c_lib: *std.Build.Step.Compile, target:std.Build.ResolvedTarget, optimize: std.builtin.OptimizeMode, flags: []const []const u8) void {
 	// compile portaudio from source:
-    const portaudio = b.dependency("portaudio", .{
-        .target = target,
-        .optimize = optimize,
-    });
-    c_lib.addIncludePath(portaudio.path("include"));
-    c_lib.installHeadersDirectory(portaudio.path("include").getPath(b), "");
-    c_lib.addIncludePath(portaudio.path("src/common"));
-    addPackageCSourceFiles(c_lib, portaudio, &[_][]const u8 {
-        "src/common/pa_allocation.c",
-        "src/common/pa_converters.c",
-        "src/common/pa_cpuload.c",
-        "src/common/pa_debugprint.c",
-        "src/common/pa_dither.c",
-        "src/common/pa_front.c",
-        "src/common/pa_process.c",
-        "src/common/pa_ringbuffer.c",
-        "src/common/pa_stream.c",
-        "src/common/pa_trace.c",
-    }, flags);
-    if(target.result.os.tag == .windows) {
-        // windows:
-        addPackageCSourceFiles(c_lib, portaudio, &[_][]const u8 {"src/os/win/pa_win_coinitialize.c", "src/os/win/pa_win_hostapis.c", "src/os/win/pa_win_util.c", "src/os/win/pa_win_waveformat.c", "src/os/win/pa_win_wdmks_utils.c", "src/os/win/pa_x86_plain_converters.c", }, flags ++ &[_][]const u8{"-DPA_USE_WASAPI"});
-        c_lib.addIncludePath(portaudio.path("src/os/win"));
-        // WASAPI:
-        addPackageCSourceFiles(c_lib, portaudio, &[_][]const u8 {"src/hostapi/wasapi/pa_win_wasapi.c"}, flags);
-    } else if(target.result.os.tag == .linux) {
-        // unix:
-        addPackageCSourceFiles(c_lib, portaudio, &[_][]const u8 {"src/os/unix/pa_unix_hostapis.c", "src/os/unix/pa_unix_util.c"}, flags ++ &[_][]const u8{"-DPA_USE_ALSA"});
-        c_lib.addIncludePath(portaudio.path("src/os/unix"));
-        // ALSA:
-        addPackageCSourceFiles(c_lib, portaudio, &[_][]const u8 {"src/hostapi/alsa/pa_linux_alsa.c"}, flags);
-    } else if(target.result.os.tag == .macos) {
-        addPackageCSourceFiles(c_lib, portaudio, &[_][]const u8 {"src/os/unix/pa_unix_hostapis.c", "src/os/unix/pa_unix_util.c"}, flags ++ &[_][]const u8{"-DPA_USE_COREAUDIO"});
-        // coreaudio:
-        addPackageCSourceFiles(c_lib, portaudio, &[_][]const u8 {"src/hostapi/coreaudio/pa_mac_core_utilities.c", "src/hostapi/coreaudio/pa_mac_core.c", "src/hostapi/coreaudio/pa_mac_core_blocking.c", }, flags ++ &[_][]const u8{"-DPA_USE_COREAUDIO"});
-    } else {
-        std.log.err("Unsupported target: {}\n", .{ target.result.os.tag });
-    }
+	const portaudio = b.dependency("portaudio", .{
+		.target = target,
+		.optimize = optimize,
+	});
+	c_lib.addIncludePath(portaudio.path("include"));
+	c_lib.installHeadersDirectory(portaudio.path("include").getPath(b), "");
+	c_lib.addIncludePath(portaudio.path("src/common"));
+	addPackageCSourceFiles(c_lib, portaudio, &[_][]const u8 {
+		"src/common/pa_allocation.c",
+		"src/common/pa_converters.c",
+		"src/common/pa_cpuload.c",
+		"src/common/pa_debugprint.c",
+		"src/common/pa_dither.c",
+		"src/common/pa_front.c",
+		"src/common/pa_process.c",
+		"src/common/pa_ringbuffer.c",
+		"src/common/pa_stream.c",
+		"src/common/pa_trace.c",
+	}, flags);
+	if(target.result.os.tag == .windows) {
+		// windows:
+		addPackageCSourceFiles(c_lib, portaudio, &[_][]const u8 {"src/os/win/pa_win_coinitialize.c", "src/os/win/pa_win_hostapis.c", "src/os/win/pa_win_util.c", "src/os/win/pa_win_waveformat.c", "src/os/win/pa_win_wdmks_utils.c", "src/os/win/pa_x86_plain_converters.c", }, flags ++ &[_][]const u8{"-DPA_USE_WASAPI"});
+		c_lib.addIncludePath(portaudio.path("src/os/win"));
+		// WASAPI:
+		addPackageCSourceFiles(c_lib, portaudio, &[_][]const u8 {"src/hostapi/wasapi/pa_win_wasapi.c"}, flags);
+	} else if(target.result.os.tag == .linux) {
+		// unix:
+		addPackageCSourceFiles(c_lib, portaudio, &[_][]const u8 {"src/os/unix/pa_unix_hostapis.c", "src/os/unix/pa_unix_util.c"}, flags ++ &[_][]const u8{"-DPA_USE_ALSA"});
+		c_lib.addIncludePath(portaudio.path("src/os/unix"));
+		// ALSA:
+		addPackageCSourceFiles(c_lib, portaudio, &[_][]const u8 {"src/hostapi/alsa/pa_linux_alsa.c"}, flags);
+	} else if(target.result.os.tag == .macos) {
+		addPackageCSourceFiles(c_lib, portaudio, &[_][]const u8 {"src/os/unix/pa_unix_hostapis.c", "src/os/unix/pa_unix_util.c"}, flags ++ &[_][]const u8{"-DPA_USE_COREAUDIO"});
+		// coreaudio:
+		addPackageCSourceFiles(c_lib, portaudio, &[_][]const u8 {"src/hostapi/coreaudio/pa_mac_core_utilities.c", "src/hostapi/coreaudio/pa_mac_core.c", "src/hostapi/coreaudio/pa_mac_core_blocking.c", }, flags ++ &[_][]const u8{"-DPA_USE_COREAUDIO"});
+	} else {
+		std.log.err("Unsupported target: {}\n", .{ target.result.os.tag });
+	}
 }
 
 pub fn addFreetypeAndHarfbuzz(b: *std.Build, c_lib: *std.Build.Step.Compile, target: std.Build.ResolvedTarget, optimize: std.builtin.OptimizeMode, flags: []const []const u8) void {
@@ -133,38 +133,38 @@ pub fn addFreetypeAndHarfbuzz(b: *std.Build, c_lib: *std.Build.Step.Compile, tar
 }
 
 pub inline fn addGLFWSources(c_lib: *std.Build.Step.Compile, target: std.Build.ResolvedTarget, flags: []const []const u8) void {
-    if(target.result.os.tag == .windows) {
-        c_lib.addCSourceFiles(.{.files = &[_][]const u8 {
-            "lib/glfw/src/win32_init.c", "lib/glfw/src/win32_joystick.c", "lib/glfw/src/win32_monitor.c", "lib/glfw/src/win32_time.c", "lib/glfw/src/win32_thread.c", "lib/glfw/src/win32_window.c", "lib/glfw/src/wgl_context.c", "lib/glfw/src/egl_context.c", "lib/glfw/src/osmesa_context.c", "lib/glfw/src/context.c", "lib/glfw/src/init.c", "lib/glfw/src/input.c", "lib/glfw/src/monitor.c", "lib/glfw/src/vulkan.c", "lib/glfw/src/window.c"
-        }, .flags = flags ++ &[_][]const u8{"-std=c99", "-D_GLFW_WIN32"}});
-    } else if(target.result.os.tag == .linux) {
-        // TODO: if(isWayland) {
-        //	c_lib.addCSourceFiles(&[_][]const u8 {
-        //		"lib/glfw/src/linux_joystick.c", "lib/glfw/src/wl_init.c", "lib/glfw/src/wl_monitor.c", "lib/glfw/src/wl_window.c", "lib/glfw/src/posix_time.c", "lib/glfw/src/posix_thread.c", "lib/glfw/src/xkb_unicode.c", "lib/glfw/src/egl_context.c", "lib/glfw/src/osmesa_context.c", "lib/glfw/src/context.c", "lib/glfw/src/init.c", "lib/glfw/src/input.c", "lib/glfw/src/monitor.c", "lib/glfw/src/vulkan.c", "lib/glfw/src/window.c"
-        //	}, &[_][]const u8{"-g",});
-        //} else {
-            c_lib.addCSourceFiles(.{.files = &[_][]const u8 {
-                "lib/glfw/src/linux_joystick.c", "lib/glfw/src/x11_init.c", "lib/glfw/src/x11_monitor.c", "lib/glfw/src/x11_window.c", "lib/glfw/src/xkb_unicode.c", "lib/glfw/src/posix_time.c", "lib/glfw/src/posix_thread.c", "lib/glfw/src/glx_context.c", "lib/glfw/src/egl_context.c", "lib/glfw/src/osmesa_context.c", "lib/glfw/src/context.c", "lib/glfw/src/init.c", "lib/glfw/src/input.c", "lib/glfw/src/monitor.c", "lib/glfw/src/vulkan.c", "lib/glfw/src/window.c"
-            }, .flags = flags ++ &[_][]const u8{"-std=c99", "-D_GLFW_X11"}});
-        //}
-    } else if(target.result.os.tag == .macos) {
-        // Building for Zink requires EGL and COCOA, while LLVMpipe needs X11.
+	if(target.result.os.tag == .windows) {
+		c_lib.addCSourceFiles(.{.files = &[_][]const u8 {
+			"lib/glfw/src/win32_init.c", "lib/glfw/src/win32_joystick.c", "lib/glfw/src/win32_monitor.c", "lib/glfw/src/win32_time.c", "lib/glfw/src/win32_thread.c", "lib/glfw/src/win32_window.c", "lib/glfw/src/wgl_context.c", "lib/glfw/src/egl_context.c", "lib/glfw/src/osmesa_context.c", "lib/glfw/src/context.c", "lib/glfw/src/init.c", "lib/glfw/src/input.c", "lib/glfw/src/monitor.c", "lib/glfw/src/vulkan.c", "lib/glfw/src/window.c"
+		}, .flags = flags ++ &[_][]const u8{"-std=c99", "-D_GLFW_WIN32"}});
+	} else if(target.result.os.tag == .linux) {
+		// TODO: if(isWayland) {
+		//	c_lib.addCSourceFiles(&[_][]const u8 {
+		//		"lib/glfw/src/linux_joystick.c", "lib/glfw/src/wl_init.c", "lib/glfw/src/wl_monitor.c", "lib/glfw/src/wl_window.c", "lib/glfw/src/posix_time.c", "lib/glfw/src/posix_thread.c", "lib/glfw/src/xkb_unicode.c", "lib/glfw/src/egl_context.c", "lib/glfw/src/osmesa_context.c", "lib/glfw/src/context.c", "lib/glfw/src/init.c", "lib/glfw/src/input.c", "lib/glfw/src/monitor.c", "lib/glfw/src/vulkan.c", "lib/glfw/src/window.c"
+		//	}, &[_][]const u8{"-g",});
+		//} else {
+			c_lib.addCSourceFiles(.{.files = &[_][]const u8 {
+				"lib/glfw/src/linux_joystick.c", "lib/glfw/src/x11_init.c", "lib/glfw/src/x11_monitor.c", "lib/glfw/src/x11_window.c", "lib/glfw/src/xkb_unicode.c", "lib/glfw/src/posix_time.c", "lib/glfw/src/posix_thread.c", "lib/glfw/src/glx_context.c", "lib/glfw/src/egl_context.c", "lib/glfw/src/osmesa_context.c", "lib/glfw/src/context.c", "lib/glfw/src/init.c", "lib/glfw/src/input.c", "lib/glfw/src/monitor.c", "lib/glfw/src/vulkan.c", "lib/glfw/src/window.c"
+			}, .flags = flags ++ &[_][]const u8{"-std=c99", "-D_GLFW_X11"}});
+		//}
+	} else if(target.result.os.tag == .macos) {
+		// Building for Zink requires EGL and COCOA, while LLVMpipe needs X11.
 		// I could offer both as target options, but Zink is nowhere near ready.
-        c_lib.addCSourceFiles(
-            .{.files = &[_][]const u8 {
+		c_lib.addCSourceFiles(
+			.{.files = &[_][]const u8 {
 				"lib/glfw/src/context.c", "lib/glfw/src/init.c", "lib/glfw/src/input.c", "lib/glfw/src/monitor.c", "lib/glfw/src/vulkan.c", "lib/glfw/src/window.c", "lib/glfw/src/posix_thread.c",
 				"lib/glfw/src/posix_time.c",
 				"lib/glfw/src/egl_context.c",
 				"lib/glfw/src/null_joystick.c", "lib/glfw/src/osmesa_context.c",
 				"lib/glfw/src/x11_init.c", "lib/glfw/src/x11_monitor.c", "lib/glfw/src/x11_window.c", "lib/glfw/src/xkb_unicode.c", "lib/glfw/src/glx_context.c"
 			},
-            .flags = flags ++ &[_][]const u8{
-            "-std=c99",
+			.flags = flags ++ &[_][]const u8{
+			"-std=c99",
 			"-D_GLFW_X11"
-        }});
-    } else {
-        std.log.err("Unsupported target for GLFW: {}\n", .{ target.result.os.tag });
-    }
+		}});
+	} else {
+		std.log.err("Unsupported target for GLFW: {}\n", .{ target.result.os.tag });
+	}
 }
 
 pub inline fn makeCubyzLibs(b: *std.Build, name: []const u8, target: std.Build.ResolvedTarget, optimize: std.builtin.OptimizeMode, flags: []const []const u8) *std.Build.Step.Compile {
