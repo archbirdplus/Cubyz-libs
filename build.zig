@@ -174,7 +174,7 @@ pub inline fn makeCubyzLibs(b: *std.Build, name: []const u8, target: std.Build.R
 		.optimize = optimize,
 	});
 
-	c_lib.addIncludePath(.{.path = "include"});
+	c_lib.addAfterIncludePath(.{.path = "include"});
 	c_lib.installHeader("include/glad/glad.h", "glad/glad.h");
 	c_lib.installHeader("include/GLFW/glfw3.h", "GLFW/glfw3.h");
 	c_lib.installHeader("include/KHR/khrplatform.h", "KHR/khrplatform.h");
