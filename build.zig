@@ -219,8 +219,6 @@ pub fn build(b: *std.Build) !void {
 
 	{
 		const name = preferredTarget.result.linuxTriple(b.allocator) catch unreachable;
-		std.log.info("{s}\n", .{name});
-		std.log.info("{}\n", .{preferredTarget});
 		const c_lib = makeCubyzLibs(b, b.fmt("cubyz_deps_{s}", .{name}), preferredTarget, preferredOptimize, c_flags);
 		const install = b.addInstallArtifact(c_lib, .{});
 
