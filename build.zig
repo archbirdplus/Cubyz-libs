@@ -156,10 +156,10 @@ pub inline fn addGLFWSources(b: *std.Build, c_lib: *std.Build.Step.Compile, targ
 	const fileses : [6]struct {condition: bool, files: []const[]const u8} = .{
 		.{.condition = true, .files = &.{"context.c", "init.c", "input.c", "monitor.c", "platform.c", "vulkan.c", "window.c", "egl_context.c", "osmesa_context.c", "null_init.c", "null_monitor.c", "null_window.c", "null_joystick.c"}},
 		.{.condition = win32, .files = &.{"win32_module.c", "win32_time.c", "win32_thread.c" }},
-		.{.condition = linux, .files = &.{"posix_poll.c", "posix_module.c", "posix_time.c", "posix_thread.c"}},
+		.{.condition = linux, .files = &.{"posix_module.c", "posix_time.c", "posix_thread.c", "linux_joystick.c"}},
 		.{.condition = macos, .files = &.{"cocoa_time.c", "posix_module.c", "posix_thread.c"}},
 		.{.condition = win32, .files = &.{"win32_init.c", "win32_joystick.c", "win32_monitor.c", "win32_window.c", "wgl_context.c"}},
-		.{.condition = x11, .files = &.{"x11_init.c", "x11_monitor.c", "x11_window.c", "xkb_unicode.c", "glx_context.c"}},
+		.{.condition = x11, .files = &.{"x11_init.c", "x11_monitor.c", "x11_window.c", "xkb_unicode.c", "glx_context.c", "posix_poll.c"}},
 	};
 
 	for(fileses) |files| {
