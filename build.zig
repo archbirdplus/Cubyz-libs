@@ -131,6 +131,7 @@ pub fn addFreetypeAndHarfbuzz(b: *std.Build, c_lib: *std.Build.Step.Compile, tar
 	c_lib.installHeadersDirectory(harfbuzz.path("src"), "", .{});
 	c_lib.defineCMacro("HAVE_FREETYPE", "1");
 	c_lib.addCSourceFile(.{.file = harfbuzz.path("src/harfbuzz.cc"), .flags = flags});
+	c_lib.linkLibCpp();
 }
 
 pub inline fn addGLFWSources(b: *std.Build, c_lib: *std.Build.Step.Compile, target: std.Build.ResolvedTarget, flags: []const []const u8) void {
