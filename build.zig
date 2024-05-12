@@ -12,10 +12,11 @@ const targets: []const std.Target.Query = &.{
 };
 
 fn addPackageCSourceFiles(exe: *std.Build.Step.Compile, dep: *std.Build.Dependency, files: []const []const u8, flags: []const []const u8) void {
-	// TODO: use the pluralized form of this method
-	for(files) |file| {
-		exe.addCSourceFile(.{ .file =  dep.path(file), .flags = flags});
-	}
+	exe.addCSourceFiles(.{
+		.root = dep.path(""),
+		.files = files,
+		.flags = flags,
+	});
 }
 
 const freetypeSources = [_][]const u8{
