@@ -12,6 +12,7 @@ const targets: []const std.Target.Query = &.{
 };
 
 fn addPackageCSourceFiles(exe: *std.Build.Step.Compile, dep: *std.Build.Dependency, files: []const []const u8, flags: []const []const u8) void {
+	// TODO: use the pluralized form of this method
 	for(files) |file| {
 		exe.addCSourceFile(.{ .file =  dep.path(file), .flags = flags});
 	}
@@ -130,48 +131,42 @@ pub fn addFreetypeAndHarfbuzz(b: *std.Build, c_lib: *std.Build.Step.Compile, tar
 	c_lib.installHeadersDirectory(harfbuzz.path("src"), "", .{});
 	c_lib.defineCMacro("HAVE_FREETYPE", "1");
 	c_lib.addCSourceFile(.{.file = harfbuzz.path("src/harfbuzz.cc"), .flags = flags});
-	c_lib.linkLibCpp();
 }
 
 pub inline fn addGLFWSources(b: *std.Build, c_lib: *std.Build.Step.Compile, target: std.Build.ResolvedTarget, flags: []const []const u8) void {
 	const glfw = b.dependency("glfw", .{});
-	const root = glfw.path("");
-	if(target.result.os.tag == .windows) {
+	const root = glfw.path("src");
+	const tag = target.result.os.tag;
+
+	const win32 = tag == .windows;
+	const linux = tag == .linux;
+	const macos = tag == .macos;
+	// in the future, there might be another Mac option besides x11
+	const x11 = linux or macos;
+	const ws_flag = if(x11) "-D_GLFW_X11" else "-D_GLFW_WIN32";
+	var all_flags = std.ArrayList([]const u8).init(b.allocator);
+	all_flags.appendSlice(flags) catch unreachable;
+	all_flags.append(ws_flag) catch unreachable;
+	if(linux) {
+		all_flags.append("-D_GNU_SOURCE") catch unreachable;
+	}
+
+	const fileses : [6]struct {condition: bool, files: []const[]const u8} = .{
+		.{.condition = true, .files = &.{"context.c", "init.c", "input.c", "monitor.c", "platform.c", "vulkan.c", "window.c", "egl_context.c", "osmesa_context.c", "null_init.c", "null_monitor.c", "null_window.c", "null_joystick.c"}},
+		.{.condition = win32, .files = &.{"win32_module.c", "win32_time.c", "win32_thread.c" }},
+		.{.condition = linux, .files = &.{"posix_poll.c", "posix_module.c", "posix_time.c", "posix_thread.c"}},
+		.{.condition = macos, .files = &.{"cocoa_time.c", "posix_module.c", "posix_thread.c"}},
+		.{.condition = win32, .files = &.{"win32_init.c", "win32_joystick.c", "win32_monitor.c", "win32_window.c", "wgl_context.c"}},
+		.{.condition = x11, .files = &.{"x11_init.c", "x11_monitor.c", "x11_window.c", "xkb_unicode.c", "glx_context.c"}},
+	};
+
+	for(fileses) |files| {
+		if(!files.condition) continue;
 		c_lib.addCSourceFiles(.{
 			.root = root,
-			.files = &.{
-				"win32_init.c", "win32_joystick.c", "win32_monitor.c", "win32_time.c", "win32_thread.c", "win32_window.c", "wgl_context.c", "egl_context.c", "osmesa_context.c", "context.c", "init.c", "input.c", "monitor.c", "vulkan.c", "window.c"
-			},
-			.flags = flags ++ &[_][]const u8 {"-std=c99", "-D_GLFW_WIN32"}
+			.files = files.files,
+			.flags = all_flags.items,
 		});
-	} else if(target.result.os.tag == .linux) {
-		c_lib.addCSourceFiles(.{
-			.root = root,
-			.files = &.{
-				"linux_joystick.c", "x11_init.c", "x11_monitor.c", "x11_window.c", "xkb_unicode.c", "posix_time.c", "posix_thread.c", "glx_context.c", "egl_context.c", "osmesa_context.c", "context.c", "init.c", "input.c", "monitor.c", "vulkan.c", "window.c"
-			},
-			.flags = flags ++ &[_][]const u8 {"-std=c99", "-D_GLFW_X11"}
-		});
-		// TODO: if(isWayland)
-		//	c_lib.addCSourceFiles(&[_][]const u8 {
-		//		"lib/glfw/src/linux_joystick.c", "lib/glfw/src/wl_init.c", "lib/glfw/src/wl_monitor.c", "lib/glfw/src/wl_window.c", "lib/glfw/src/posix_time.c", "lib/glfw/src/posix_thread.c", "lib/glfw/src/xkb_unicode.c", "lib/glfw/src/egl_context.c", "lib/glfw/src/osmesa_context.c", "lib/glfw/src/context.c", "lib/glfw/src/init.c", "lib/glfw/src/input.c", "lib/glfw/src/monitor.c", "lib/glfw/src/vulkan.c", "lib/glfw/src/window.c"
-		//	}, &[_][]const u8{"-g",});
-	} else if(target.result.os.tag == .macos) {
-		// Building for Zink requires EGL and COCOA, while LLVMpipe needs X11.
-		// I could offer both as target options, but Zink is nowhere near ready.
-		c_lib.addCSourceFiles(.{
-			.root = root,
-			.files = &.{
-				"context.c", "init.c", "input.c", "monitor.c", "vulkan.c", "window.c", "posix_thread.c",
-				"posix_time.c",
-				"egl_context.c",
-				"null_joystick.c", "osmesa_context.c",
-				"x11_init.c", "x11_monitor.c", "x11_window.c", "xkb_unicode.c", "glx_context.c"
-			},
-			.flags = flags ++ &[_][]const u8 {"-std=c99", "-D_GLFW_X11"}
-		});
-	} else {
-		std.log.err("Unsupported target for GLFW: {}\n", .{ target.result.os.tag });
 	}
 }
 
