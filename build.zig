@@ -70,7 +70,7 @@ pub inline fn addPortAudio(b: *std.Build, c_lib: *std.Build.Step.Compile, target
 		.optimize = optimize,
 	});
 	c_lib.addIncludePath(portaudio.path("include"));
-	c_lib.installHeadersDirectory(portaudio.path("include").getPath(b), "");
+	c_lib.installHeadersDirectory(portaudio.path("include"), "", .{});
 	c_lib.addIncludePath(portaudio.path("src/common"));
 	addPackageCSourceFiles(c_lib, portaudio, &[_][]const u8 {
 		"src/common/pa_allocation.c",
@@ -118,7 +118,7 @@ pub fn addFreetypeAndHarfbuzz(b: *std.Build, c_lib: *std.Build.Step.Compile, tar
 	c_lib.defineCMacro("FT2_BUILD_LIBRARY", "1");
 	c_lib.defineCMacro("HAVE_UNISTD_H", "1");
 	c_lib.addIncludePath(freetype.path("include"));
-	c_lib.installHeadersDirectory(freetype.path("include").getPath(b), "");
+	c_lib.installHeadersDirectory(freetype.path("include"), "", .{});
 	addPackageCSourceFiles(c_lib, freetype, &freetypeSources, flags);
 	if (target.result.os.tag == .macos) c_lib.addCSourceFile(.{
 		.file = freetype.path("src/base/ftmac.c"),
@@ -126,7 +126,7 @@ pub fn addFreetypeAndHarfbuzz(b: *std.Build, c_lib: *std.Build.Step.Compile, tar
 	});
 
 	c_lib.addIncludePath(harfbuzz.path("src"));
-	c_lib.installHeadersDirectory(harfbuzz.path("src").getPath(b), ""); // TODO: Only include the headers.
+	c_lib.installHeadersDirectory(harfbuzz.path("src"), "", .{});
 	c_lib.defineCMacro("HAVE_FREETYPE", "1");
 	c_lib.addCSourceFile(.{.file = harfbuzz.path("src/harfbuzz.cc"), .flags = flags});
 	c_lib.linkLibCpp();
@@ -175,12 +175,12 @@ pub inline fn makeCubyzLibs(b: *std.Build, name: []const u8, target: std.Build.R
 	});
 
 	c_lib.addAfterIncludePath(.{.path = "include"});
-	c_lib.installHeader("include/glad/glad.h", "glad/glad.h");
-	c_lib.installHeader("include/GLFW/glfw3.h", "GLFW/glfw3.h");
-	c_lib.installHeader("include/KHR/khrplatform.h", "KHR/khrplatform.h");
-	c_lib.installHeader("include/stb/stb_image_write.h", "stb/stb_image_write.h");
-	c_lib.installHeader("include/stb/stb_image.h", "stb/stb_image.h");
-	c_lib.installHeader("include/stb/stb_vorbis.h", "stb/stb_vorbis.h");
+	c_lib.installHeader(.{.path = "include/glad/glad.h"}, "glad/glad.h");
+	c_lib.installHeader(.{.path = "include/GLFW/glfw3.h"}, "GLFW/glfw3.h");
+	c_lib.installHeader(.{.path = "include/KHR/khrplatform.h"}, "KHR/khrplatform.h");
+	c_lib.installHeader(.{.path = "include/stb/stb_image_write.h"}, "stb/stb_image_write.h");
+	c_lib.installHeader(.{.path = "include/stb/stb_image.h"}, "stb/stb_image.h");
+	c_lib.installHeader(.{.path = "include/stb/stb_vorbis.h"}, "stb/stb_vorbis.h");
 	addPortAudio(b, c_lib, target, optimize, flags);
 	addFreetypeAndHarfbuzz(b, c_lib, target, optimize, flags);
 	addGLFWSources(c_lib, target, flags);
