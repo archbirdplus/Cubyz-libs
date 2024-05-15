@@ -196,7 +196,7 @@ pub inline fn makeCubyzLibs(b: *std.Build, name: []const u8, target: std.Build.R
 	addFreetypeAndHarfbuzz(b, c_lib, target, optimize, flags);
 	addGLFWSources(b, c_lib, target, flags);
 	c_lib.addCSourceFile(.{.file = .{.path = "lib/glad.c"}, .flags = flags ++ &[_][]const u8 {"-D_MAC_X11"}});
-	c_lib.addCSourceFiles(.{.files = &[_][]const u8{"lib/glad.c", "lib/stb_image.c", "lib/stb_image_write.c", "lib/stb_vorbis.c"}, .flags = flags});
+	c_lib.addCSourceFiles(.{.files = &[_][]const u8{"lib/stb_image.c", "lib/stb_image_write.c", "lib/stb_vorbis.c"}, .flags = flags});
 
 	return c_lib;
 }
