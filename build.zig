@@ -158,7 +158,7 @@ pub inline fn addGLFWSources(b: *std.Build, c_lib: *std.Build.Step.Compile, targ
 	}
 
 	c_lib.addIncludePath(.{.path = glfw.path("include").getPath(b)});
-	c_lib.installHeader(glfw.path("include/GLFW/glfw3.h").getPath(b), "GLFW/glfw3.h");
+	c_lib.installHeader(glfw.path("include/GLFW/glfw3.h"), "GLFW/glfw3.h");
 	const fileses : [7]struct {condition: bool, files: []const[]const u8} = .{
 		.{.condition = true, .files = &.{"context.c", "init.c", "input.c", "monitor.c", "platform.c", "vulkan.c", "window.c", "egl_context.c", "osmesa_context.c", "null_init.c", "null_monitor.c", "null_window.c", "null_joystick.c"}},
 		.{.condition = win32, .files = &.{"win32_module.c", "win32_time.c", "win32_thread.c" }},
