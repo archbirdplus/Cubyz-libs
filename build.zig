@@ -153,6 +153,8 @@ pub inline fn addGLFWSources(b: *std.Build, c_lib: *std.Build.Step.Compile, targ
 		all_flags.append("-D_GNU_SOURCE") catch unreachable;
 	}
 
+	c_lib.addIncludePath(.{.path = glfw.path("include").getPath(b)});
+	c_lib.installHeader(glfw.path("include/GLFW/glfw3.h").getPath(b), "GLFW/glfw3.h");
 	const fileses : [6]struct {condition: bool, files: []const[]const u8} = .{
 		.{.condition = true, .files = &.{"context.c", "init.c", "input.c", "monitor.c", "platform.c", "vulkan.c", "window.c", "egl_context.c", "osmesa_context.c", "null_init.c", "null_monitor.c", "null_window.c", "null_joystick.c"}},
 		.{.condition = win32, .files = &.{"win32_module.c", "win32_time.c", "win32_thread.c" }},
@@ -181,7 +183,6 @@ pub inline fn makeCubyzLibs(b: *std.Build, name: []const u8, target: std.Build.R
 
 	c_lib.addAfterIncludePath(.{.path = "include"});
 	c_lib.installHeader(.{.path = "include/glad/glad.h"}, "glad/glad.h");
-	c_lib.installHeader(.{.path = "include/GLFW/glfw3.h"}, "GLFW/glfw3.h");
 	c_lib.installHeader(.{.path = "include/KHR/khrplatform.h"}, "KHR/khrplatform.h");
 	c_lib.installHeader(.{.path = "include/stb/stb_image_write.h"}, "stb/stb_image_write.h");
 	c_lib.installHeader(.{.path = "include/stb/stb_image.h"}, "stb/stb_image.h");
@@ -189,6 +190,7 @@ pub inline fn makeCubyzLibs(b: *std.Build, name: []const u8, target: std.Build.R
 	addPortAudio(b, c_lib, target, optimize, flags);
 	addFreetypeAndHarfbuzz(b, c_lib, target, optimize, flags);
 	addGLFWSources(b, c_lib, target, flags);
+	c_lib.addCSourceFile(.{.file = .{.path = "lib/glad.c"}, .flags = flags ++ &[_][]const u8 {"-D_MAC_X11"}});
 	c_lib.addCSourceFiles(.{.files = &[_][]const u8{"lib/glad.c", "lib/stb_image.c", "lib/stb_image_write.c", "lib/stb_vorbis.c"}, .flags = flags});
 
 	return c_lib;
