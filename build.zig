@@ -65,12 +65,9 @@ const freetypeSources = [_][]const u8{
 };
 
 // Inlines are necessaryb to preserve comptime status of flags.
-pub inline fn addPortAudio(b: *std.Build, c_lib: *std.Build.Step.Compile, target:std.Build.ResolvedTarget, optimize: std.builtin.OptimizeMode, flags: []const []const u8) void {
+pub inline fn addPortAudio(b: *std.Build, c_lib: *std.Build.Step.Compile, target:std.Build.ResolvedTarget, flags: []const []const u8) void {
 	// compile portaudio from source:
-	const portaudio = b.dependency("portaudio", .{
-		.target = target,
-		.optimize = optimize,
-	});
+	const portaudio = b.dependency("portaudio", .{});
 	c_lib.addIncludePath(portaudio.path("include"));
 	c_lib.installHeadersDirectory(portaudio.path("include"), "", .{});
 	c_lib.addIncludePath(portaudio.path("src/common"));
@@ -107,16 +104,9 @@ pub inline fn addPortAudio(b: *std.Build, c_lib: *std.Build.Step.Compile, target
 	}
 }
 
-pub fn addFreetypeAndHarfbuzz(b: *std.Build, c_lib: *std.Build.Step.Compile, target: std.Build.ResolvedTarget, optimize: std.builtin.OptimizeMode, flags: []const []const u8) void {
-	// TODO: delete?
-	const freetype = b.dependency("freetype", .{
-		.target = target,
-		.optimize = optimize,
-	});
-	const harfbuzz = b.dependency("harfbuzz", .{
-		.target = target,
-		.optimize = optimize,
-	});
+pub fn addFreetypeAndHarfbuzz(b: *std.Build, c_lib: *std.Build.Step.Compile, target: std.Build.ResolvedTarget, flags: []const []const u8) void {
+	const freetype = b.dependency("freetype", .{});
+	const harfbuzz = b.dependency("harfbuzz", .{});
 
 	c_lib.defineCMacro("FT2_BUILD_LIBRARY", "1");
 	c_lib.defineCMacro("HAVE_UNISTD_H", "1");
@@ -192,8 +182,8 @@ pub inline fn makeCubyzLibs(b: *std.Build, name: []const u8, target: std.Build.R
 	c_lib.installHeader(.{.path = "include/stb/stb_image_write.h"}, "stb/stb_image_write.h");
 	c_lib.installHeader(.{.path = "include/stb/stb_image.h"}, "stb/stb_image.h");
 	c_lib.installHeader(.{.path = "include/stb/stb_vorbis.h"}, "stb/stb_vorbis.h");
-	addPortAudio(b, c_lib, target, optimize, flags);
-	addFreetypeAndHarfbuzz(b, c_lib, target, optimize, flags);
+	addPortAudio(b, c_lib, target, flags);
+	addFreetypeAndHarfbuzz(b, c_lib, target, flags);
 	addGLFWSources(b, c_lib, target, flags);
 	c_lib.addCSourceFile(.{.file = .{.path = "lib/glad.c"}, .flags = flags ++ &[_][]const u8 {"-D_MAC_X11"}});
 	c_lib.addCSourceFiles(.{.files = &[_][]const u8{"lib/stb_image.c", "lib/stb_image_write.c", "lib/stb_vorbis.c"}, .flags = flags});
