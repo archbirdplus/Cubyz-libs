@@ -4,7 +4,8 @@
 	.paths = .{""},
 	.dependencies = .{
 		.glfw = .{
-			.path = "../glfw/cubyz-sources"
+			.url = "https://github.com/glfw/glfw/archive/refs/tags/3.4.tar.gz",
+			.hash = "1220c46ebcac607065f942193b82a21b87213fca4b0d50c83461f8f5e22955fcb88f",
 		},
 		.harfbuzz = .{
 			.url = "https://github.com/harfbuzz/harfbuzz/archive/refs/tags/8.2.2.tar.gz",
