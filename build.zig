@@ -128,42 +128,56 @@ pub fn addFreetypeAndHarfbuzz(b: *std.Build, c_lib: *std.Build.Step.Compile, tar
 pub inline fn addGLFWSources(b: *std.Build, c_lib: *std.Build.Step.Compile, target: std.Build.ResolvedTarget, flags: []const []const u8) void {
 	const glfw = b.dependency("glfw", .{});
 	const root = glfw.path("src");
-	const tag = target.result.os.tag;
+	const os = target.result.os.tag;
 
-	const win32 = tag == .windows;
-	const linux = tag == .linux;
-	const macos = tag == .macos;
-	// in the future, there might be another Mac option besides x11
-	const x11 = linux or macos;
-	const cocoa = !x11 and !win32;
-	const ws_flag = if(x11) "-D_GLFW_X11" else
-					if(win32) "-D_GLFW_WIN32" else
-					if(cocoa) "-D_GLFW_COCOA" else
-					unreachable;
+	const WinSys = enum {win32, x11, cocoa};
+
+	// TODO: Wayland
+	// TODO: Cocoa
+	const ws: WinSys = switch(os) {
+		.windows => .win32,
+		.linux => .x11,
+		.macos => .x11,
+		// There are a surprising number of platforms zig supports.
+		// File a bug report if Cubyz doesn't work on yours.
+		else => blk: {
+			std.log.warn("Operating system ({}) is untested.", .{os});
+			break :blk .x11;
+		}
+	};
+	const ws_flag = switch(ws) {
+		.win32 => "-D_GLFW_WIN32",
+		.x11 => "-D_GLFW_X11",
+		.cocoa => "-D_GLFW_COCOA",
+	};
 	var all_flags = std.ArrayList([]const u8).init(b.allocator);
 	all_flags.appendSlice(flags) catch unreachable;
 	all_flags.append(ws_flag) catch unreachable;
-	if(linux) {
+	if(os == .linux) {
 		all_flags.append("-D_GNU_SOURCE") catch unreachable;
 	}
 
 	c_lib.addIncludePath(.{.path = glfw.path("include").getPath(b)});
 	c_lib.installHeader(glfw.path("include/GLFW/glfw3.h"), "GLFW/glfw3.h");
-	const fileses : [7]struct {condition: bool, files: []const[]const u8} = .{
-		.{.condition = true, .files = &.{"context.c", "init.c", "input.c", "monitor.c", "platform.c", "vulkan.c", "window.c", "egl_context.c", "osmesa_context.c", "null_init.c", "null_monitor.c", "null_window.c", "null_joystick.c"}},
-		.{.condition = win32, .files = &.{"win32_module.c", "win32_time.c", "win32_thread.c" }},
-		.{.condition = linux, .files = &.{"posix_module.c", "posix_time.c", "posix_thread.c", "linux_joystick.c"}},
-		.{.condition = macos, .files = &.{"cocoa_time.c", "posix_module.c", "posix_thread.c"}},
-		.{.condition = win32, .files = &.{"win32_init.c", "win32_joystick.c", "win32_monitor.c", "win32_window.c", "wgl_context.c"}},
-		.{.condition = x11, .files = &.{"x11_init.c", "x11_monitor.c", "x11_window.c", "xkb_unicode.c", "glx_context.c", "posix_poll.c"}},
-		.{.condition = cocoa, .files = &.{"cocoa_platform.h", "cocoa_joystick.h", "cocoa_init.m", "cocoa_joystick.m", "cocoa_monitor.m", "cocoa_window.m", "nsgl_context.m"}},
+	const fileses : [3][]const[]const u8 = .{
+		&.{"context.c", "init.c", "input.c", "monitor.c", "platform.c", "vulkan.c", "window.c", "egl_context.c", "osmesa_context.c", "null_init.c", "null_monitor.c", "null_window.c", "null_joystick.c"},
+		switch(os) {
+			.windows => &.{"win32_module.c", "win32_time.c", "win32_thread.c" },
+			.linux => &.{"posix_module.c", "posix_time.c", "posix_thread.c", "linux_joystick.c"},
+			.macos => &.{"cocoa_time.c", "posix_module.c", "posix_thread.c"},
+			else => &.{"posix_module.c", "posix_time.c", "posix_thread.c", "linux_joystick.c"},
+		},
+		switch(ws) {
+			.win32 => &.{"win32_init.c", "win32_joystick.c", "win32_monitor.c", "win32_window.c", "wgl_context.c"},
+			.x11 => &.{"x11_init.c", "x11_monitor.c", "x11_window.c", "xkb_unicode.c", "glx_context.c", "posix_poll.c"},
+			.cocoa => &.{"cocoa_platform.h", "cocoa_joystick.h", "cocoa_init.m", "cocoa_joystick.m", "cocoa_monitor.m", "cocoa_window.m", "nsgl_context.m"},
+		}
 	};
 
 	for(fileses) |files| {
-		if(!files.condition) continue;
 		c_lib.addCSourceFiles(.{
 			.root = root,
-			.files = files.files,
+			.files = files,
 			.flags = all_flags.items,
 		});
 	}
